@@ -50,10 +50,6 @@
     transition: background-color 0.05s linear;
   }
 
-  body.line-browser #box {
-    display: none;
-  }
-
   #content {
     max-width: var(--content-max-width);
     width: 100%;
@@ -209,108 +205,12 @@
     .stat-value { font-size: 18px; }
   }
 
-  #line-external-page {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    background: linear-gradient(180deg, #0d1117 0%, #111827 100%);
-    color: #fff;
-    z-index: 10;
-  }
-
-  body.line-browser #line-external-page {
-    display: flex;
-  }
-
-  .line-card {
-    width: min(100%, 460px);
-    border-radius: 24px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    padding: 28px 22px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-    text-align: center;
-  }
-
-  .line-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 82px;
-    min-height: 36px;
-    padding: 8px 14px;
-    margin-bottom: 18px;
-    border-radius: 999px;
-    background: #06c755;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-  }
-
-  .line-title {
-    font-size: clamp(26px, 6vw, 34px);
-    font-weight: 800;
-    line-height: 1.25;
-    margin-bottom: 12px;
-  }
-
-  .line-desc {
-    font-size: 15px;
-    line-height: 1.75;
-    color: rgba(255,255,255,0.88);
-    margin-bottom: 18px;
-  }
-
-  .line-count {
-    font-size: 14px;
-    color: rgba(255,255,255,0.7);
-    margin-bottom: 18px;
-  }
-
-  .line-open-btn {
-    appearance: none;
-    width: 100%;
-    border: 0;
-    border-radius: 16px;
-    background: #ffffff;
-    color: #111827;
-    padding: 16px 18px;
-    min-height: 54px;
-    font-size: 16px;
-    font-weight: 800;
-    cursor: pointer;
-  }
-
-  .line-note {
-    margin-top: 14px;
-    font-size: 12px;
-    line-height: 1.6;
-    color: rgba(255,255,255,0.62);
-  }
 </style>
 </head>
 <body translate="no" class="notranslate">
-  <div id="line-external-page" aria-live="polite">
-    <div class="line-card">
-      <div class="line-badge">LINE</div>
-      <div class="line-title">ご利用のブラウザで開く</div>
-      <div class="line-desc">LINE内ブラウザで開かれています。<br>Safari / Chrome などのブラウザで開くと、より安定してご利用いただけます。</div>
-      <div class="line-count">この画面は自動では閉じません</div>
-      <button id="line-open-btn" class="line-open-btn" type="button">ご利用のブラウザで開く</button>
-      <div class="line-note">上のボタンを押すと、外部ブラウザで開けます。</div>
-    </div>
-  </div>
-
   <div id="box" role="button" aria-label="Reaction Time Test">
     <div id="share-bar">
       <button id="share-x" class="share-btn" type="button">Xで共有</button>
-      <button id="share-line" class="share-btn" type="button">LINEで共有</button>
     </div>
 
     <div id="content">
@@ -354,9 +254,6 @@
   const worldVal = document.getElementById('world-val');
   const countVal = document.getElementById('count-val');
   const shareX = document.getElementById('share-x');
-  const shareLine = document.getElementById('share-line');
-  const lineExternalPage = document.getElementById('line-external-page');
-  const lineOpenBtn = document.getElementById('line-open-btn');
 
   const labelState = {
     actionWord: 'Click',
@@ -483,43 +380,6 @@
     enrichDeviceProfile(profile).then(applyDeviceProfile);
   }
 
-  function isLineInAppBrowser() {
-    return /Line\//i.test(navigator.userAgent || '');
-  }
-
-  function externalBrowserUrl() {
-    return window.location.href;
-  }
-
-  function openInExternalBrowser() {
-    const currentUrl = externalBrowserUrl();
-    const encoded = encodeURIComponent(currentUrl);
-    const ua = navigator.userAgent || '';
-
-    if (/iPhone|iPad|iPod/i.test(ua)) {
-      window.location.href = 'https://line.me/R/openExternalBrowser?url=' + encoded;
-      return;
-    }
-
-    if (/Android/i.test(ua)) {
-      window.location.href = 'intent://' + currentUrl.replace(/^https?:\/\//i, '') + '#Intent;scheme=' + (currentUrl.startsWith('https://') ? 'https' : 'http') + ';package=com.android.chrome;end';
-      return;
-    }
-
-    window.open(currentUrl, '_blank', 'noopener,noreferrer');
-  }
-
-  function startLineBrowserInterstitial() {
-    if (!isLineInAppBrowser()) return;
-
-    document.body.classList.add('line-browser');
-
-    if (lineOpenBtn) {
-      lineOpenBtn.addEventListener('click', function () {
-        openInExternalBrowser();
-      });
-    }
-  }
 
   function loadStats() {
     try {
@@ -622,11 +482,6 @@
     window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank', 'noopener,noreferrer');
   }
 
-  function openLineShare() {
-    const text = encodeURIComponent(shareText() + ' ' + shareUrl());
-    window.open('https://social-plugins.line.me/lineit/share?text=' + text, '_blank', 'noopener,noreferrer');
-  }
-
   function onGameTap(event) {
     if (event) event.preventDefault();
 
@@ -651,17 +506,11 @@
     openXShare();
   });
 
-  shareLine.addEventListener('click', function (event) {
-    event.stopPropagation();
-    openLineShare();
-  });
-
   box.addEventListener('pointerdown', onGameTap, { passive: false });
 
   loadStats();
   renderStats();
   updateAdaptiveUi();
-  startLineBrowserInterstitial();
   setIdleScreen();
 
   let resizeTimer = null;
