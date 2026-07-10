@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="google" content="notranslate">
+<title>Reaction Time Test</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #111;
+  }
+  body {
+    overflow: hidden;
+    --box-padding: 24px;
+    --content-max-width: 760px;
+    --share-top: max(14px, env(safe-area-inset-top));
+    --share-right: 14px;
+    --share-left: auto;
+    --share-justify: flex-end;
+    --share-gap: 10px;
+    --share-width: auto;
+    --stats-bottom: max(20px, env(safe-area-inset-bottom));
+    --stats-gap: 14px;
+    --stats-card-min-width: 110px;
+    --stats-padding-x: 16px;
+  }
+
+  #box {
+    position: relative;
+    width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #fff;
+    background: #2B87D1;
+    padding: var(--box-padding);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: background-color 0.05s linear;
+  }
+
+  #content {
+    max-width: var(--content-max-width);
+    width: 100%;
+    padding-top: calc(env(safe-area-inset-top) + 8px);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
+  }
+
+  #idle-title {
+    font-size: clamp(34px, 7vw, 46px);
+    font-weight: 700;
+    margin-bottom: 18px;
+  }
+
+  #main-text {
+    font-size: clamp(34px, 7vw, 44px);
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  #sub-text {
+    font-size: clamp(17px, 4.2vw, 19px);
+    line-height: 1.6;
+    opacity: 0.9;
+  }
+
+  #share-bar {
+    position: absolute;
+    top: var(--share-top);
+    right: var(--share-right);
+    left: var(--share-left);
+    width: var(--share-width);
+    display: flex;
+    justify-content: var(--share-justify);
+    gap: var(--share-gap);
+    z-index: 2;
+  }
+
+  .share-btn {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.16);
+    color: #fff;
+    padding: 10px 14px;
+    min-height: 42px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .share-btn:active { transform: scale(0.98); }
+
+  #stats {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--stats-bottom);
+    display: flex;
+    justify-content: center;
+    gap: var(--stats-gap);
+    flex-wrap: wrap;
+    padding: 0 var(--stats-padding-x);
+  }
+
+  .stat-card {
+    min-width: var(--stats-card-min-width);
+    padding: 12px 18px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .stat-label {
+    font-size: 12px;
+    opacity: 0.82;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  body.device-mobile {
+    --box-padding: 18px;
+    --content-max-width: 100%;
+    --share-top: max(12px, env(safe-area-inset-top));
+    --share-right: 12px;
+    --share-gap: 8px;
+    --stats-bottom: max(14px, env(safe-area-inset-bottom));
+    --stats-gap: 10px;
+    --stats-card-min-width: calc(33.333% - 8px);
+  }
+
+  body.device-mobile #share-bar,
+  body.device-mobile.landscape-short #share-bar {
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+
+  body.device-mobile .share-btn {
+    min-height: 40px;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+
+  body.device-mobile .stat-card {
+    padding: 10px 12px;
+  }
+
+  body.device-mobile .stat-value,
+  body.device-tablet .stat-value { font-size: 18px; }
+
+  body.device-tablet {
+    --box-padding: 22px;
+    --content-max-width: 680px;
+    --share-top: max(14px, env(safe-area-inset-top));
+    --share-right: 14px;
+    --stats-card-min-width: 140px;
+  }
+
+  body.device-desktop {
+    --box-padding: 28px;
+    --content-max-width: 820px;
+    --share-top: 18px;
+    --share-right: 18px;
+    --stats-bottom: 24px;
+    --stats-card-min-width: 140px;
+  }
+
+  body.landscape-short {
+    --box-padding: 14px;
+    --share-top: max(8px, env(safe-area-inset-top));
+    --stats-bottom: max(8px, env(safe-area-inset-bottom));
+    --stats-gap: 8px;
+  }
+
+  body.landscape-short #content {
+    padding-top: 34px;
+    padding-bottom: 70px;
+  }
+
+  body.landscape-short #stats {
+    transform: scale(0.95);
+    transform-origin: bottom center;
+  }
+
+  @media (max-width: 640px) {
+    .stat-value { font-size: 18px; }
+  }
+</style>
+</head>
+<body translate="no" class="notranslate">
+  <div id="box" role="button" aria-label="Reaction Time Test">
+    <div id="share-bar">
+      <button id="share-x" class="share-btn" type="button">Xで共有</button>
+      <button id="share-line" class="share-btn" type="button">LINEで共有</button>
+    </div>
+
+    <div id="content">
+      <div id="idle-title">Reaction Time Test</div>
+      <div id="main-text">Wait for green</div>
+      <div id="sub-text">When the red box turns green,<br>tap as quickly as you can.</div>
+    </div>
+
+    <div id="stats">
+      <div class="stat-card">
+        <div class="stat-label">ハイスコア</div>
+        <div class="stat-value" id="best-val">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">全世界平均</div>
+        <div class="stat-value" id="world-val">250 ms</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">試行回数</div>
+        <div class="stat-value" id="count-val">0</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'reaction-time-test-v2';
+  const WORLD_AVERAGE = 250;
+
+  const COLOR_IDLE = '#2B87D1';
+  const COLOR_WAIT = '#CE2636';
+  const COLOR_GO = '#4BDB6A';
+  const COLOR_RESULT = '#2B87D1';
+  const COLOR_TOOSOON = '#2B87D1';
+
+  const box = document.getElementById('box');
+  const idleTitle = document.getElementById('idle-title');
+  const mainText = document.getElementById('main-text');
+  const subText = document.getElementById('sub-text');
+  const bestVal = document.getElementById('best-val');
+  const worldVal = document.getElementById('world-val');
+  const countVal = document.getElementById('count-val');
+  const shareX = document.getElementById('share-x');
+  const shareLine = document.getElementById('share-line');
+
+  const labelState = {
+    actionWord: 'Click',
+    actionWordLower: 'click',
+    anywhereWord: 'Click'
+  };
+
+  let state = 'idle';
+  let startTime = 0;
+  let waitTimer = null;
+  let lastResult = null;
+  let bestScore = null;
+  let attemptCount = 0;
+
+  function getActionPromptText() {
+    return labelState.anywhereWord + ' anywhere to start.';
+  }
+
+  function getWaitInstructionHtml() {
+    return 'When the red box turns green,<br>' + labelState.actionWordLower + ' as quickly as you can.<br><br>' + getActionPromptText();
+  }
+
+  function getRetryText() {
+    return labelState.anywhereWord + ' to try again.';
+  }
+
+  function getContinueText() {
+    return labelState.anywhereWord + ' to keep going';
+  }
+
+  function applyInteractionLabels(isTouchLike) {
+    labelState.actionWord = isTouchLike ? 'Tap' : 'Click';
+    labelState.actionWordLower = isTouchLike ? 'tap' : 'click';
+    labelState.anywhereWord = isTouchLike ? 'Tap' : 'Click';
+
+    if (state === 'idle') {
+      mainText.textContent = 'Wait for green';
+      subText.innerHTML = getWaitInstructionHtml();
+    } else if (state === 'waiting') {
+      mainText.textContent = 'Wait for green';
+    } else if (state === 'ready') {
+      mainText.textContent = labelState.actionWord + '!';
+    } else if (state === 'toosoon') {
+      subText.textContent = getRetryText();
+    } else if (state === 'result') {
+      subText.textContent = getContinueText();
+    }
+  }
+
+  function detectDeviceProfileSync() {
+    const ua = navigator.userAgent || '';
+    const width = window.innerWidth || screen.width || 0;
+    const height = window.innerHeight || screen.height || 0;
+    const shortestSide = Math.min(width, height);
+    const hasTouch = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches;
+    const isIPad = /iPad/.test(ua) || (/Macintosh/.test(ua) && hasTouch);
+    const isAndroid = /Android/i.test(ua);
+    const isIPhone = /iPhone/i.test(ua);
+    const isMobile = isIPhone || (/Android/i.test(ua) && /Mobile/i.test(ua)) || shortestSide < 768;
+    const isTablet = isIPad || (isAndroid && !/Mobile/i.test(ua)) || (!isMobile && shortestSide >= 768 && shortestSide <= 1024 && hasTouch);
+    const deviceType = isTablet ? 'tablet' : (isMobile ? 'mobile' : 'desktop');
+    const isLandscapeShort = width > height && height < 520;
+
+    return {
+      deviceType,
+      hasTouch,
+      isLandscapeShort,
+      platform: isIPhone || isIPad ? 'ios' : (isAndroid ? 'android' : (/Mac/i.test(ua) ? 'mac' : (/Windows/i.test(ua) ? 'windows' : 'other'))),
+      model: ''
+    };
+  }
+
+  async function enrichDeviceProfile(profile) {
+    if (!navigator.userAgentData || typeof navigator.userAgentData.getHighEntropyValues !== 'function') {
+      return profile;
+    }
+
+    try {
+      const hints = await navigator.userAgentData.getHighEntropyValues(['model', 'platform']);
+      if (hints && typeof hints.model === 'string' && hints.model.trim()) {
+        profile.model = hints.model.trim();
+      }
+      if (hints && typeof hints.platform === 'string' && hints.platform.trim()) {
+        profile.platform = hints.platform.trim().toLowerCase();
+      }
+    } catch (e) {}
+
+    return profile;
+  }
+
+  function applyDeviceProfile(profile) {
+    document.body.classList.remove(
+      'device-mobile',
+      'device-tablet',
+      'device-desktop',
+      'is-touch',
+      'is-non-touch',
+      'platform-ios',
+      'platform-android',
+      'platform-mac',
+      'platform-windows',
+      'landscape-short'
+    );
+
+    document.body.classList.add('device-' + profile.deviceType);
+    document.body.classList.add(profile.hasTouch ? 'is-touch' : 'is-non-touch');
+    if (profile.platform) {
+      document.body.classList.add('platform-' + profile.platform.replace(/[^a-z0-9-]/g, ''));
+    }
+    if (profile.isLandscapeShort) {
+      document.body.classList.add('landscape-short');
+    }
+
+    document.body.dataset.deviceType = profile.deviceType;
+    document.body.dataset.devicePlatform = profile.platform || 'unknown';
+    document.body.dataset.deviceModel = profile.model || 'unknown';
+
+    applyInteractionLabels(profile.hasTouch);
+  }
+
+  function updateAdaptiveUi() {
+    const profile = detectDeviceProfileSync();
+    applyDeviceProfile(profile);
+    enrichDeviceProfile(profile).then(applyDeviceProfile);
+  }
+
+  function loadStats() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (typeof data.bestScore === 'number') bestScore = data.bestScore;
+      if (typeof data.attemptCount === 'number') attemptCount = data.attemptCount;
+    } catch (e) {}
+  }
+
+  function saveStats() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        bestScore,
+        attemptCount
+      }));
+    } catch (e) {}
+  }
+
+  function renderStats() {
+    bestVal.textContent = bestScore === null ? '–' : bestScore + ' ms';
+    worldVal.textContent = WORLD_AVERAGE + ' ms';
+    countVal.textContent = String(attemptCount);
+  }
+
+  function setIdleScreen() {
+    state = 'idle';
+    clearTimeout(waitTimer);
+    box.style.backgroundColor = COLOR_IDLE;
+    idleTitle.style.display = 'block';
+    mainText.style.display = 'none';
+    subText.style.display = 'block';
+    subText.innerHTML = getWaitInstructionHtml();
+  }
+
+  function setWaitingScreen() {
+    state = 'waiting';
+    box.style.backgroundColor = COLOR_WAIT;
+    idleTitle.style.display = 'none';
+    mainText.style.display = 'block';
+    mainText.textContent = 'Wait for green';
+    subText.style.display = 'none';
+
+    const delay = 2000 + Math.random() * 3000;
+    waitTimer = setTimeout(setReadyScreen, delay);
+  }
+
+  function setReadyScreen() {
+    state = 'ready';
+    box.style.backgroundColor = COLOR_GO;
+    mainText.textContent = labelState.actionWord + '!';
+    subText.style.display = 'none';
+    startTime = performance.now();
+  }
+
+  function setTooSoonScreen() {
+    state = 'toosoon';
+    clearTimeout(waitTimer);
+    box.style.backgroundColor = COLOR_TOOSOON;
+    idleTitle.style.display = 'none';
+    mainText.style.display = 'block';
+    mainText.textContent = 'Too soon!';
+    subText.style.display = 'block';
+    subText.textContent = getRetryText();
+  }
+
+  function setResultScreen(ms) {
+    state = 'result';
+    lastResult = ms;
+    attemptCount += 1;
+    if (bestScore === null || ms < bestScore) {
+      bestScore = ms;
+    }
+    saveStats();
+    renderStats();
+
+    box.style.backgroundColor = COLOR_RESULT;
+    idleTitle.style.display = 'none';
+    mainText.style.display = 'block';
+    mainText.textContent = ms + ' ms';
+    subText.style.display = 'block';
+    subText.textContent = getContinueText();
+  }
+
+  function shareText() {
+    if (lastResult !== null) {
+      return 'Reaction Time Testで ' + lastResult + ' ms を記録。ハイスコアは ' + (bestScore === null ? '–' : bestScore + ' ms') + '。';
+    }
+    return 'Reaction Time Testに挑戦してみよう。';
+  }
+
+  function shareUrl() {
+    return window.location.href;
+  }
+
+  function openXShare() {
+    const text = encodeURIComponent(shareText());
+    const url = encodeURIComponent(shareUrl());
+    window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank', 'noopener,noreferrer');
+  }
+
+  function openLineShare() {
+    const text = encodeURIComponent(shareText() + ' ' + shareUrl());
+    window.open('https://social-plugins.line.me/lineit/share?text=' + text, '_blank', 'noopener,noreferrer');
+  }
+
+  function onGameTap(event) {
+    if (event) event.preventDefault();
+
+    if (state === 'idle' || state === 'result' || state === 'toosoon') {
+      setWaitingScreen();
+      return;
+    }
+
+    if (state === 'waiting') {
+      setTooSoonScreen();
+      return;
+    }
+
+    if (state === 'ready') {
+      const ms = Math.round(performance.now() - startTime);
+      setResultScreen(ms);
+    }
+  }
+
+  shareX.addEventListener('click', function (event) {
+    event.stopPropagation();
+    openXShare();
+  });
+
+  shareLine.addEventListener('click', function (event) {
+    event.stopPropagation();
+    openLineShare();
+  });
+
+  box.addEventListener('pointerdown', onGameTap, { passive: false });
+
+  loadStats();
+  renderStats();
+  updateAdaptiveUi();
+  setIdleScreen();
+
+  let resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(updateAdaptiveUi, 120);
+  }, { passive: true });
+
+  window.addEventListener('orientationchange', function () {
+    setTimeout(updateAdaptiveUi, 180);
+  }, { passive: true });
+})();
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
