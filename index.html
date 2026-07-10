@@ -301,9 +301,9 @@
       <div class="line-badge">LINE</div>
       <div class="line-title">ご利用のブラウザで開く</div>
       <div class="line-desc">LINE内ブラウザで開かれています。<br>Safari / Chrome などのブラウザで開くと、より安定してご利用いただけます。</div>
-      <div class="line-count"><span id="line-countdown">3</span>秒後にこの画面を閉じます</div>
+      <div class="line-count">この画面は自動では閉じません</div>
       <button id="line-open-btn" class="line-open-btn" type="button">ご利用のブラウザで開く</button>
-      <div class="line-note">自動で閉じない場合は、上のボタンを押して外部ブラウザで開いてください。</div>
+      <div class="line-note">上のボタンを押すと、外部ブラウザで開けます。</div>
     </div>
   </div>
 
@@ -357,7 +357,6 @@
   const shareLine = document.getElementById('share-line');
   const lineExternalPage = document.getElementById('line-external-page');
   const lineOpenBtn = document.getElementById('line-open-btn');
-  const lineCountdown = document.getElementById('line-countdown');
 
   const labelState = {
     actionWord: 'Click',
@@ -514,28 +513,10 @@
     if (!isLineInAppBrowser()) return;
 
     document.body.classList.add('line-browser');
-    let remaining = 3;
-    if (lineCountdown) lineCountdown.textContent = String(remaining);
-
-    const timer = setInterval(function () {
-      remaining -= 1;
-      if (lineCountdown) lineCountdown.textContent = String(Math.max(remaining, 0));
-      if (remaining <= 0) {
-        clearInterval(timer);
-        try {
-          window.close();
-        } catch (e) {}
-      }
-    }, 1000);
 
     if (lineOpenBtn) {
       lineOpenBtn.addEventListener('click', function () {
         openInExternalBrowser();
-        setTimeout(function () {
-          try {
-            window.close();
-          } catch (e) {}
-        }, 300);
       });
     }
   }
@@ -694,6 +675,7 @@
   }, { passive: true });
 })();
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
