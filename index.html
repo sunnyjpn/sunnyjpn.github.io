@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="google" content="notranslate">
 <title>Reaction Time Test</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2B87D1">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="反応速度テスト">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
   * { box-sizing: border-box; }
   html, body {
@@ -136,6 +146,55 @@
     font-weight: 700;
   }
 
+  #recent-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--stats-bottom) + 64px);
+    text-align: center;
+    font-size: 13px;
+    opacity: 0.85;
+    padding: 0 var(--stats-padding-x);
+  }
+
+  #recent-label {
+    opacity: 0.75;
+    margin-right: 4px;
+  }
+
+  #ios-install-hint {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    top: calc(var(--share-top) + 54px);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 10px 14px;
+    border-radius: 12px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  #ios-install-hint-close {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.8;
+    padding: 2px 4px;
+    flex-shrink: 0;
+  }
+
   body.device-mobile {
     --box-padding: 18px;
     --content-max-width: 100%;
@@ -144,7 +203,7 @@
     --share-gap: 8px;
     --stats-bottom: max(14px, env(safe-area-inset-bottom));
     --stats-gap: 10px;
-    --stats-card-min-width: calc(33.333% - 8px);
+    --stats-card-min-width: calc(50% - 8px);
   }
 
   body.device-mobile #share-bar,
@@ -152,6 +211,8 @@
     left: 12px;
     right: 12px;
     width: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   body.device-mobile .share-btn {
@@ -162,6 +223,10 @@
 
   body.device-mobile .stat-card {
     padding: 10px 12px;
+  }
+
+  body.device-mobile #recent-bar {
+    bottom: calc(var(--stats-bottom) + 116px);
   }
 
   body.device-mobile .stat-value,
@@ -210,6 +275,8 @@
 <body translate="no" class="notranslate">
   <div id="box" role="button" aria-label="Reaction Time Test">
     <div id="share-bar">
+      <button id="install-btn" class="share-btn" type="button" style="display:none;">ホーム画面に追加</button>
+      <button id="share-native" class="share-btn" type="button" style="display:none;">共有</button>
       <button id="share-x" class="share-btn" type="button">Xで共有</button>
     </div>
 
@@ -225,6 +292,10 @@
         <div class="stat-value" id="best-val">–</div>
       </div>
       <div class="stat-card">
+        <div class="stat-label">自己平均</div>
+        <div class="stat-value" id="avg-val">–</div>
+      </div>
+      <div class="stat-card">
         <div class="stat-label">全世界平均</div>
         <div class="stat-value" id="world-val">250 ms</div>
       </div>
@@ -233,11 +304,19 @@
         <div class="stat-value" id="count-val">0</div>
       </div>
     </div>
+    <div id="recent-bar">
+      <span id="recent-label">直近の記録：</span><span id="recent-val">–</span>
+    </div>
+
+    <div id="ios-install-hint" style="display:none;">
+      <span>共有アイコンから「ホーム画面に追加」でアプリのように使えます</span>
+      <button id="ios-install-hint-close" type="button" aria-label="閉じる">×</button>
+    </div>
   </div>
 
 <script>
 (function () {
-  const STORAGE_KEY = 'reaction-time-test-v2';
+  const STORAGE_KEY = 'reaction-time-test-v3';
   const WORLD_AVERAGE = 250;
 
   const COLOR_IDLE = '#2B87D1';
@@ -253,7 +332,15 @@
   const bestVal = document.getElementById('best-val');
   const worldVal = document.getElementById('world-val');
   const countVal = document.getElementById('count-val');
+  const avgVal = document.getElementById('avg-val');
+  const recentVal = document.getElementById('recent-val');
   const shareX = document.getElementById('share-x');
+  const shareNative = document.getElementById('share-native');
+  const installBtn = document.getElementById('install-btn');
+  const iosHint = document.getElementById('ios-install-hint');
+  const iosHintClose = document.getElementById('ios-install-hint-close');
+
+  const RECENT_HISTORY_MAX = 5;
 
   const labelState = {
     actionWord: 'Click',
@@ -267,6 +354,8 @@
   let lastResult = null;
   let bestScore = null;
   let attemptCount = 0;
+  let totalTimeSum = 0;
+  let recentHistory = [];
 
   function getActionPromptText() {
     return labelState.anywhereWord + ' anywhere to start.';
@@ -388,6 +477,8 @@
       const data = JSON.parse(raw);
       if (typeof data.bestScore === 'number') bestScore = data.bestScore;
       if (typeof data.attemptCount === 'number') attemptCount = data.attemptCount;
+      if (typeof data.totalTimeSum === 'number') totalTimeSum = data.totalTimeSum;
+      if (Array.isArray(data.recentHistory)) recentHistory = data.recentHistory.slice(-RECENT_HISTORY_MAX);
     } catch (e) {}
   }
 
@@ -395,7 +486,9 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         bestScore,
-        attemptCount
+        attemptCount,
+        totalTimeSum,
+        recentHistory
       }));
     } catch (e) {}
   }
@@ -404,6 +497,14 @@
     bestVal.textContent = bestScore === null ? '–' : bestScore + ' ms';
     worldVal.textContent = WORLD_AVERAGE + ' ms';
     countVal.textContent = String(attemptCount);
+    avgVal.textContent = attemptCount === 0 ? '–' : Math.round(totalTimeSum / attemptCount) + ' ms';
+    recentVal.textContent = recentHistory.length === 0 ? '–' : recentHistory.join(' / ') + ' ms';
+  }
+
+  function vibrateFeedback(pattern) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(pattern); } catch (e) {}
+    }
   }
 
   function setIdleScreen() {
@@ -434,6 +535,7 @@
     mainText.textContent = labelState.actionWord + '!';
     subText.style.display = 'none';
     startTime = performance.now();
+    vibrateFeedback(40);
   }
 
   function setTooSoonScreen() {
@@ -445,17 +547,26 @@
     mainText.textContent = 'Too soon!';
     subText.style.display = 'block';
     subText.textContent = getRetryText();
+    vibrateFeedback([15, 40, 15]);
   }
 
   function setResultScreen(ms) {
     state = 'result';
     lastResult = ms;
     attemptCount += 1;
+    totalTimeSum += ms;
+    let isNewBest = false;
     if (bestScore === null || ms < bestScore) {
       bestScore = ms;
+      isNewBest = true;
+    }
+    recentHistory.push(ms);
+    if (recentHistory.length > RECENT_HISTORY_MAX) {
+      recentHistory = recentHistory.slice(-RECENT_HISTORY_MAX);
     }
     saveStats();
     renderStats();
+    vibrateFeedback(isNewBest ? [30, 40, 30] : 25);
 
     box.style.backgroundColor = COLOR_RESULT;
     idleTitle.style.display = 'none';
@@ -482,6 +593,16 @@
     window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank', 'noopener,noreferrer');
   }
 
+  async function openNativeShare() {
+    if (!navigator.share) return;
+    try {
+      await navigator.share({
+        text: shareText(),
+        url: shareUrl()
+      });
+    } catch (e) {}
+  }
+
   function onGameTap(event) {
     if (event) event.preventDefault();
 
@@ -506,6 +627,64 @@
     openXShare();
   });
 
+  if (navigator.share) {
+    shareNative.style.display = '';
+    shareNative.addEventListener('click', function (event) {
+      event.stopPropagation();
+      openNativeShare();
+    });
+  }
+
+  const INSTALL_HINT_DISMISS_KEY = 'reaction-time-test-ios-hint-dismissed';
+  let deferredInstallPrompt = null;
+
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
+  window.addEventListener('beforeinstallprompt', function (event) {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    if (!isStandalone) {
+      installBtn.style.display = '';
+    }
+  });
+
+  installBtn.addEventListener('click', function (event) {
+    event.stopPropagation();
+    if (!deferredInstallPrompt) return;
+    installBtn.style.display = 'none';
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.finally(function () {
+      deferredInstallPrompt = null;
+    });
+  });
+
+  window.addEventListener('appinstalled', function () {
+    installBtn.style.display = 'none';
+    deferredInstallPrompt = null;
+  });
+
+  (function maybeShowIosHint() {
+    const ua = navigator.userAgent || '';
+    const isIosDevice = /iPad|iPhone|iPod/.test(ua)
+      || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+
+    if (!isIosDevice || !isSafari || isStandalone) return;
+
+    let dismissed = false;
+    try { dismissed = localStorage.getItem(INSTALL_HINT_DISMISS_KEY) === '1'; } catch (e) {}
+    if (dismissed) return;
+
+    iosHint.style.display = 'flex';
+  })();
+
+  iosHintClose.addEventListener('click', function (event) {
+    event.stopPropagation();
+    iosHint.style.display = 'none';
+    try { localStorage.setItem(INSTALL_HINT_DISMISS_KEY, '1'); } catch (e) {}
+  });
+
   box.addEventListener('pointerdown', onGameTap, { passive: false });
 
   loadStats();
@@ -522,10 +701,14 @@
   window.addEventListener('orientationchange', function () {
     setTimeout(updateAdaptiveUi, 180);
   }, { passive: true });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
 })();
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
