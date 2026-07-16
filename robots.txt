@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://example.com/reaction-time-test/sitemap.xml
+Sitemap: https://sunnyjpn.github.io/sitemap.xml
