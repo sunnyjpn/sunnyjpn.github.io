@@ -244,21 +244,6 @@
     font-weight: 700;
   }
 
-  #recent-bar {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: calc(var(--stats-bottom) + 64px);
-    text-align: center;
-    font-size: 13px;
-    opacity: 0.85;
-    padding: 0 var(--stats-padding-x);
-  }
-
-  #recent-label {
-    opacity: 0.75;
-    margin-right: 4px;
-  }
 
   #ios-install-hint {
     position: absolute;
@@ -321,10 +306,6 @@
 
   body.device-mobile .stat-card {
     padding: 10px 12px;
-  }
-
-  body.device-mobile #recent-bar {
-    bottom: calc(var(--stats-bottom) + 116px);
   }
 
   body.device-mobile .stat-value,
@@ -510,13 +491,6 @@
         <div class="stat-label">全世界平均</div>
         <div class="stat-value" id="world-val">250 ms</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">試行回数</div>
-        <div class="stat-value" id="count-val">0</div>
-      </div>
-    </div>
-    <div id="recent-bar">
-      <span id="recent-label">直近の記録：</span><span id="recent-val">–</span>
     </div>
 
     <div id="ios-install-hint" style="display:none;">
@@ -624,9 +598,7 @@
   const subText = document.getElementById('sub-text');
   const bestVal = document.getElementById('best-val');
   const worldVal = document.getElementById('world-val');
-  const countVal = document.getElementById('count-val');
   const avgVal = document.getElementById('avg-val');
-  const recentVal = document.getElementById('recent-val');
   const shareX = document.getElementById('share-x');
   const shareNative = document.getElementById('share-native');
   const installBtn = document.getElementById('install-btn');
@@ -789,9 +761,7 @@
   function renderStats() {
     bestVal.textContent = bestScore === null ? '–' : bestScore + ' ms';
     worldVal.textContent = WORLD_AVERAGE + ' ms';
-    countVal.textContent = String(attemptCount);
     avgVal.textContent = attemptCount === 0 ? '–' : Math.round(totalTimeSum / attemptCount) + ' ms';
-    recentVal.textContent = recentHistory.length === 0 ? '–' : recentHistory.join(' / ') + ' ms';
   }
 
   function vibrateFeedback(pattern) {
