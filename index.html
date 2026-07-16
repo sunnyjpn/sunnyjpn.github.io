@@ -46,6 +46,46 @@
   }
 }
 </script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "反応速度テストは無料で使えますか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "はい、完全無料でご利用いただけます。会員登録やアプリのインストールも不要です。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "測定結果はどこに保存されますか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ハイスコアや試行回数などの記録は、お使いのブラウザ内（ローカルストレージ）にのみ保存されます。外部サーバーへの送信は行われません。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "スマートフォンでも使えますか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "はい、スマートフォン・タブレット・パソコンのいずれのブラウザからもご利用いただけます。ホーム画面に追加すればアプリのように起動することも可能です。"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "結果が毎回ばらつくのはなぜですか？",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "反応速度は体調や集中力、デバイスの表示遅延などによって変動します。複数回測定し、平均値で比較することをおすすめします。"
+      }
+    }
+  ]
+}
+</script>
 <!-- ▲▲ SEO設定ここまで ▲▲ -->
 
 <link rel="manifest" href="manifest.json">
@@ -57,6 +97,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="反応速度テスト">
 <meta name="mobile-web-app-capable" content="yes">
+
+<!-- ▼▼ Google AdSense: ご自身のパブリッシャーIDに置き換えてください（ca-pub-XXXXXXXXXXXXXXXX） ▼▼ -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+<!-- ▲▲ Google AdSenseここまで ▲▲ -->
+
 <style>
   * { box-sizing: border-box; }
   .sr-only {
@@ -78,7 +123,6 @@
     background: #111;
   }
   body {
-    overflow: hidden;
     --box-padding: 24px;
     --content-max-width: 760px;
     --share-top: max(14px, env(safe-area-inset-top));
@@ -95,7 +139,7 @@
 
   #box {
     position: relative;
-    width: 100vw;
+    width: 100%;
     min-height: 100vh;
     min-height: 100dvh;
     display: flex;
@@ -323,6 +367,115 @@
     .stat-value { font-size: 18px; }
   }
 
+  #scroll-hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 6px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  #seo-content {
+    background: #111;
+    color: #eaeaea;
+    padding: 56px 20px 72px;
+  }
+
+  #seo-content .seo-inner {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  #seo-content h2 {
+    font-size: clamp(20px, 4vw, 26px);
+    font-weight: 700;
+    margin: 44px 0 16px;
+    color: #fff;
+  }
+
+  #seo-content h2:first-child {
+    margin-top: 0;
+  }
+
+  #seo-content h3 {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 24px 0 8px;
+    color: #fff;
+  }
+
+  #seo-content p,
+  #seo-content li {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #cfcfcf;
+  }
+
+  #seo-content ul,
+  #seo-content ol {
+    padding-left: 1.3em;
+    margin: 12px 0;
+  }
+
+  #seo-content li {
+    margin-bottom: 8px;
+  }
+
+  #seo-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 8px;
+    font-size: 14px;
+  }
+
+  #seo-table th,
+  #seo-table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    color: #cfcfcf;
+  }
+
+  #seo-table th {
+    color: #fff;
+    font-weight: 700;
+    background: rgba(255,255,255,0.04);
+  }
+
+  .faq-item {
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding: 16px 0;
+  }
+
+  .faq-item:first-child {
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .faq-item h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+  }
+
+  .faq-item p {
+    margin: 0;
+  }
+
+  .ad-slot {
+    margin: 36px 0;
+    text-align: center;
+  }
+
+  .ad-slot-label {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 6px;
+  }
+
 </style>
 </head>
 <body translate="no" class="notranslate">
@@ -369,7 +522,89 @@
       <span>共有アイコンから「ホーム画面に追加」でアプリのように使えます</span>
       <button id="ios-install-hint-close" type="button" aria-label="閉じる">×</button>
     </div>
+
+    <div id="scroll-hint">↓ 使い方・反応速度の目安はスクロールしてご覧ください ↓</div>
   </div>
+
+  <section id="seo-content" aria-labelledby="seo-heading">
+    <div class="seo-inner">
+      <h2 id="seo-heading">反応速度テスト（Reaction Time Test）とは</h2>
+      <p>反応速度テストは、画面の色が変化した瞬間にできるだけ早くタップ（クリック）し、目や耳からの刺激に対して体がどれくらい速く反応できるかを測る無料のオンラインツールです。専用アプリのインストールは不要で、スマートフォン・タブレット・パソコンのブラウザから今すぐ測定できます。測定結果はハイスコアや自己平均としてブラウザ内に保存され、次回アクセス時にも記録を引き継いで確認できます。</p>
+      <p>反応速度（リアクションタイム）は、スポーツや格闘技、eスポーツ、車の運転など、瞬時の判断力が求められる場面で重要な能力の一つとされています。定期的に測定することで、自分の反応速度の変化や体調・集中力の目安を把握するのにも役立ちます。</p>
+
+      <h2>遊び方（3ステップ）</h2>
+      <ol>
+        <li><strong>画面をタップして開始：</strong>青い画面のどこでもよいのでタップまたはクリックすると測定が始まります。</li>
+        <li><strong>赤い画面で待つ：</strong>画面が赤色の間はまだ反応するタイミングではありません。フライング（早すぎるタップ）に注意しながら待ちましょう。</li>
+        <li><strong>緑色に変わったら即タップ：</strong>画面が緑色に切り替わった瞬間、できるだけ早くタップしてください。その反応時間がミリ秒（ms）単位で表示されます。</li>
+      </ol>
+      <p>赤色のうちにタップしてしまうと「Too soon!（早すぎます）」と表示され、その回はやり直しになります。焦らず、緑色に変わってからタップするのがコツです。</p>
+
+      <div class="ad-slot">
+        <div class="ad-slot-label">スポンサーリンク</div>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+             data-ad-slot="1111111111"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+
+      <h2>反応速度の目安</h2>
+      <p>一般的に、視覚的な刺激に対する人間の平均的な反応速度はおよそ200〜250ミリ秒程度とされています。以下は目安の一例です。</p>
+      <table id="seo-table">
+        <thead>
+          <tr><th>反応速度</th><th>目安の評価</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>150ms以下</td><td>非常に速い（トップアスリート・プロゲーマー水準）</td></tr>
+          <tr><td>150〜200ms</td><td>速い</td></tr>
+          <tr><td>200〜250ms</td><td>平均的</td></tr>
+          <tr><td>250〜300ms</td><td>やや遅め</td></tr>
+          <tr><td>300ms以上</td><td>集中力の低下や疲労の可能性あり</td></tr>
+        </tbody>
+      </table>
+      <p>数値はあくまで目安であり、年齢・体調・使用しているデバイスやディスプレイの反応速度（遅延）によっても結果は変動します。同じ条件で複数回測定し、平均値で比較するのがおすすめです。</p>
+
+      <h2>反応速度を上げるコツ</h2>
+      <ul>
+        <li>画面の色の変化そのものではなく、変化した「後」に反応する意識を持つ</li>
+        <li>肩や指の力を抜き、リラックスした状態で構える</li>
+        <li>睡眠不足や疲労時は反応速度が落ちやすいため、体調の良いタイミングで測定する</li>
+        <li>何度か繰り返し測定し、平均値やハイスコアの推移を確認する</li>
+      </ul>
+
+      <h2>よくある質問</h2>
+      <div class="faq-item">
+        <h3>反応速度テストは無料で使えますか？</h3>
+        <p>はい、完全無料でご利用いただけます。会員登録やアプリのインストールも不要です。</p>
+      </div>
+      <div class="faq-item">
+        <h3>測定結果はどこに保存されますか？</h3>
+        <p>ハイスコアや試行回数などの記録は、お使いのブラウザ内（ローカルストレージ）にのみ保存されます。外部サーバーへの送信は行われません。</p>
+      </div>
+      <div class="faq-item">
+        <h3>スマートフォンでも使えますか？</h3>
+        <p>はい、スマートフォン・タブレット・パソコンのいずれのブラウザからもご利用いただけます。ホーム画面に追加すればアプリのように起動することも可能です。</p>
+      </div>
+      <div class="faq-item">
+        <h3>結果が毎回ばらつくのはなぜですか？</h3>
+        <p>反応速度は体調や集中力、デバイスの表示遅延などによって変動します。複数回測定し、平均値で比較することをおすすめします。</p>
+      </div>
+
+      <div class="ad-slot">
+        <div class="ad-slot-label">スポンサーリンク</div>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+             data-ad-slot="2222222222"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+    </div>
+  </section>
 
 <script>
 (function () {
