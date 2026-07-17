@@ -91,9 +91,12 @@
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2B87D1">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- ▼▼ アイコン・ファビコン初期設定（動的生成スクリプトが読み込まれるまでのフォールバック） ▼▼ -->
+<link id="dynamic-favicon" rel="icon" type="image/png" href="icon-192.png">
+<link id="dynamic-apple-icon" rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- ▲▲ アイコン・ファビコン初期設定ここまで ▲▲ -->
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="反応速度テスト">
@@ -244,14 +247,13 @@
     font-weight: 700;
   }
 
-
   #ios-install-hint {
     position: absolute;
     left: 12px;
     right: 12px;
     top: calc(var(--share-top) + 54px);
     z-index: 2;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     gap: 10px;
@@ -263,6 +265,45 @@
     border-radius: 12px;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transform: translateY(-12px) scale(0.94);
+  }
+
+  #ios-install-hint.is-visible {
+    display: flex;
+    animation: ios-hint-pop-in 0.46s cubic-bezier(.32,1.5,.55,1) forwards;
+  }
+
+  #ios-install-hint.is-hiding {
+    display: flex;
+    animation: ios-hint-pop-out 0.26s cubic-bezier(.4,0,1,1) forwards;
+  }
+
+  @keyframes ios-hint-pop-in {
+    0%   { opacity: 0; transform: translateY(-12px) scale(0.94); }
+    55%  { opacity: 1; transform: translateY(3px) scale(1.015); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes ios-hint-pop-out {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  }
+
+  #ios-install-hint-text {
+    display: inline-block;
+  }
+
+  #ios-install-hint-text .hint-char {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(7px);
+    animation: hint-char-in 0.4s cubic-bezier(.2,.85,.25,1) forwards;
+    animation-delay: var(--char-delay, 0s);
+  }
+
+  @keyframes hint-char-in {
+    to { opacity: 1; transform: translateY(0); }
   }
 
   #ios-install-hint-close {
@@ -273,9 +314,35 @@
     font-size: 16px;
     line-height: 1;
     cursor: pointer;
-    opacity: 0.8;
+    opacity: 0;
     padding: 2px 4px;
     flex-shrink: 0;
+    animation: hint-close-in 0.3s ease forwards;
+    animation-delay: var(--close-delay, 0.7s);
+  }
+
+  @keyframes hint-close-in {
+    to { opacity: 0.8; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #ios-install-hint,
+    #ios-install-hint.is-visible,
+    #ios-install-hint.is-hiding {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+    #ios-install-hint.is-visible { display: flex; }
+    #ios-install-hint-text .hint-char {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+    #ios-install-hint-close {
+      animation: none;
+      opacity: 0.8;
+    }
   }
 
   body.device-mobile {
@@ -349,49 +416,6 @@
     .stat-value { font-size: 16px; }
   }
 
-  #scroll-hint {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    z-index: 1;
-    pointer-events: none;
-  }
-
-  #scroll-hint span {
-    display: block;
-    width: 10px;
-    height: 10px;
-    border-right: 2px solid rgba(255,255,255,0.85);
-    border-bottom: 2px solid rgba(255,255,255,0.85);
-    transform: rotate(45deg) translateY(-10px);
-    opacity: 0;
-    animation: scroll-hint-reveal 2.6s cubic-bezier(.4,0,.2,1) infinite;
-  }
-
-  #scroll-hint span:nth-child(1) { animation-delay: 0s; }
-  #scroll-hint span:nth-child(2) { animation-delay: 0.18s; }
-  #scroll-hint span:nth-child(3) { animation-delay: 0.36s; }
-
-  @keyframes scroll-hint-reveal {
-    0%   { opacity: 0; transform: rotate(45deg) translateY(-10px); }
-    18%  { opacity: 1; transform: rotate(45deg) translateY(0); }
-    62%  { opacity: 1; transform: rotate(45deg) translateY(0); }
-    80%  { opacity: 0; transform: rotate(45deg) translateY(7px); }
-    100% { opacity: 0; transform: rotate(45deg) translateY(-10px); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    #scroll-hint span {
-      animation: none;
-      opacity: 0.75;
-    }
-  }
-
   #seo-content {
     background: #111;
     color: #eaeaea;
@@ -415,10 +439,19 @@
   }
 
   #seo-content h3 {
-    font-size: 17px;
+    font-size: clamp(16px, 3.5vw, 20px);
     font-weight: 700;
-    margin: 24px 0 8px;
+    margin: 28px 0 12px;
     color: #fff;
+    border-left: 4px solid #2B87D1;
+    padding-left: 10px;
+  }
+
+  #seo-content h4 {
+    font-size: clamp(14px, 3vw, 16px);
+    font-weight: 700;
+    margin: 20px 0 8px;
+    color: #e0e0e0;
   }
 
   #seo-content p,
@@ -471,6 +504,8 @@
   .faq-item h3 {
     margin: 0 0 8px;
     font-size: 16px;
+    border-left: none;
+    padding-left: 0;
   }
 
   .faq-item p {
@@ -488,7 +523,6 @@
     color: rgba(255,255,255,0.4);
     margin-bottom: 6px;
   }
-
 </style>
 </head>
 <body translate="no" class="notranslate">
@@ -524,12 +558,11 @@
       </div>
     </div>
 
-    <div id="ios-install-hint" style="display:none;">
-      <span>共有アイコンから「ホーム画面に追加」でアプリのように使えます</span>
+    <div id="ios-install-hint">
+      <span id="ios-install-hint-text" aria-hidden="true"></span>
+      <span class="sr-only">共有アイコンから「ホーム画面に追加」でアプリのように使えます</span>
       <button id="ios-install-hint-close" type="button" aria-label="閉じる">×</button>
     </div>
-
-    <div id="scroll-hint" aria-hidden="true"><span></span><span></span><span></span></div>
   </div>
 
   <section id="seo-content" aria-labelledby="seo-heading">
@@ -574,12 +607,14 @@
       <p>数値はあくまで目安であり、年齢・体調・使用しているデバイスやディスプレイの反応速度（遅延）によっても結果は変動します。同じ条件で複数回測定し、平均値で比較するのがおすすめです。</p>
 
       <h2>反応速度を上げるコツ</h2>
-      <ul>
-        <li>画面の色の変化そのものではなく、変化した「後」に反応する意識を持つ</li>
-        <li>肩や指の力を抜き、リラックスした状態で構える</li>
-        <li>睡眠不足や疲労時は反応速度が落ちやすいため、体調の良いタイミングで測定する</li>
-        <li>何度か繰り返し測定し、平均値やハイスコアの推移を確認する</li>
-      </ul>
+      <h3>1. 変化した「後」に反応する意識</h3>
+      <p>画面の色の変化そのものを予測しようとするのではない、実際に緑に変化したのを確認した「後」に、指を動かす意識を持つことで安定したタイムが出やすくなります。</p>
+      
+      <h3>2. リラックスして構える</h3>
+      <p>肩や指に過度な力が入っていると、かえって初動が遅れてしまいます。リラックスした状態で構えるのがコツです。</p>
+      
+      <h3>3. ベストな体調のときに測定する</h3>
+      <p>睡眠不足や疲労が溜まっている時は、脳の処理速度が落ちるため反応速度も著しく低下します。体調の良いタイミングを意識して測定してみましょう。</p>
 
       <h2>よくある質問</h2>
       <div class="faq-item">
@@ -597,6 +632,12 @@
       <div class="faq-item">
         <h3>結果が毎回ばらつくのはなぜですか？</h3>
         <p>反応速度は体調や集中力、デバイスの表示遅延などによって変動します。複数回測定し、平均値で比較することをおすすめします。</p>
+        
+        <h4>環境による遅延の主な原因</h4>
+        <ul>
+          <li><strong>ディスプレイの応答速度：</strong>リフレッシュレート（60Hz/144Hzなど）により表示ラグが変化します。</li>
+          <li><strong>接続機器の遅延：</strong>ワイヤレスマウスやBluetooth製品などの使用により、ミリ秒単位の遅延が発生する場合があります。</li>
+        </ul>
       </div>
 
       <div class="ad-slot">
@@ -611,6 +652,59 @@
       </div>
     </div>
   </section>
+
+<!-- ▼▼ アイコン動的切り出し & 角丸生成スクリプト ▼▼ -->
+<script>
+(function() {
+  const ogImgUrl = 'https://sunnyjpn.github.io/og-image.png';
+  const img = new Image();
+  img.crossOrigin = 'anonymous'; 
+  img.src = ogImgUrl;
+
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 生成するアイコンのサイズ（PWA用の高解像度512x512基準）
+    const size = 512;
+    canvas.width = size;
+    canvas.height = size;
+
+    // og-image.png（1200x630）から雷マークがある左側を正確にクリッピング
+    // 雷マークは左の領域（X: 0〜630、Y: 0〜630付近）に収まっています
+    const srcX = 30;     // 左右のバランスを調整
+    const srcY = 0;      
+    const srcSize = 580; // 雷マークを大きくクローズアップするための切り出しサイズ
+
+    // 角丸パス（角丸半径: iOSアイコン風に約22%に設定。512pxに対して112px）
+    const radius = 112; 
+    ctx.beginPath();
+    ctx.moveTo(radius, 0);
+    ctx.lineTo(size - radius, 0);
+    ctx.quadraticCurveTo(size, 0, size, radius);
+    ctx.lineTo(size, size - radius);
+    ctx.quadraticCurveTo(size, size, size - radius, size);
+    ctx.lineTo(radius, size);
+    ctx.quadraticCurveTo(0, size, 0, size - radius);
+    ctx.lineTo(0, radius);
+    ctx.quadraticCurveTo(0, 0, radius, 0);
+    ctx.closePath();
+    ctx.clip(); // これにより、以降の描画が美しい角丸に制限されます
+
+    // 画像の描画（切り出して角丸にする）
+    ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, size, size);
+
+    // Data URLに変換し、タブやアプリアイコンに設定[cite: 1]
+    const iconDataUrl = canvas.toDataURL('image/png');
+
+    const favEl = document.getElementById('dynamic-favicon');
+    const appleEl = document.getElementById('dynamic-apple-icon');
+    if (favEl) favEl.href = iconDataUrl;
+    if (appleEl) appleEl.href = iconDataUrl;
+  };
+})();
+</script>
+<!-- ▲▲ アイコン動的切り出し & 角丸生成スクリプトここまで ▲▲ -->
 
 <script>
 (function () {
@@ -765,7 +859,6 @@
     enrichDeviceProfile(profile).then(applyDeviceProfile);
   }
 
-
   function loadStats() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -877,6 +970,7 @@
     return 'Reaction Time Testに挑戦してみよう。';
   }
 
+  // 修正: ローカル変数名の衝突を避けるため、引数名を event から e に変更
   function shareUrl() {
     return window.location.href;
   }
@@ -930,6 +1024,22 @@
   }
 
   const INSTALL_HINT_DISMISS_KEY = 'reaction-time-test-ios-hint-dismissed';
+  const IOS_HINT_TEXT = '共有アイコンから「ホーム画面に追加」でアプリのように使えます';
+  const iosHintText = document.getElementById('ios-install-hint-text');
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (iosHintText) {
+    const chars = Array.from(IOS_HINT_TEXT);
+    const baseDelay = 0.03;
+    iosHintText.innerHTML = chars.map(function (ch, i) {
+      const display = ch === ' ' ? '&nbsp;' : ch;
+      return '<span class="hint-char" style="--char-delay:' + (i * baseDelay).toFixed(3) + 's">' + display + '</span>';
+    }).join('');
+    if (iosHintClose) {
+      iosHintClose.style.setProperty('--close-delay', (chars.length * baseDelay + 0.2).toFixed(3) + 's');
+    }
+  }
+
   let deferredInstallPrompt = null;
 
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches
@@ -970,13 +1080,26 @@
     try { dismissed = localStorage.getItem(INSTALL_HINT_DISMISS_KEY) === '1'; } catch (e) {}
     if (dismissed) return;
 
-    iosHint.style.display = 'flex';
+    iosHint.classList.add('is-visible');
   })();
 
   iosHintClose.addEventListener('click', function (event) {
     event.stopPropagation();
-    iosHint.style.display = 'none';
     try { localStorage.setItem(INSTALL_HINT_DISMISS_KEY, '1'); } catch (e) {}
+
+    if (prefersReducedMotion) {
+      iosHint.classList.remove('is-visible');
+      iosHint.style.display = 'none';
+      return;
+    }
+
+    iosHint.classList.remove('is-visible');
+    iosHint.classList.add('is-hiding');
+    iosHint.addEventListener('animationend', function onHideEnd() {
+      iosHint.removeEventListener('animationend', onHideEnd);
+      iosHint.classList.remove('is-hiding');
+      iosHint.style.display = 'none';
+    }, { once: true });
   });
 
   box.addEventListener('pointerdown', onGameTap, { passive: false });
