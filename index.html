@@ -93,8 +93,9 @@
 <meta name="theme-color" content="#2B87D1">
 
 <!-- ▼▼ アイコン・ファビコン初期設定（動的生成スクリプトが読み込まれるまでのフォールバック） ▼▼ -->
-<link id="dynamic-favicon" rel="icon" type="image/png" href="icon-192.png">
-<link id="dynamic-apple-icon" rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <!-- ▲▲ アイコン・ファビコン初期設定ここまで ▲▲ -->
 
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -652,59 +653,6 @@
       </div>
     </div>
   </section>
-
-<!-- ▼▼ アイコン動的切り出し & 角丸生成スクリプト ▼▼ -->
-<script>
-(function() {
-  const ogImgUrl = 'https://sunnyjpn.github.io/og-image.png';
-  const img = new Image();
-  img.crossOrigin = 'anonymous'; 
-  img.src = ogImgUrl;
-
-  img.onload = function() {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // 生成するアイコンのサイズ（PWA用の高解像度512x512基準）
-    const size = 512;
-    canvas.width = size;
-    canvas.height = size;
-
-    // og-image.png（1200x630）から雷マークがある左側を正確にクリッピング
-    // 雷マークは左の領域（X: 0〜630、Y: 0〜630付近）に収まっています
-    const srcX = 30;     // 左右のバランスを調整
-    const srcY = 0;      
-    const srcSize = 580; // 雷マークを大きくクローズアップするための切り出しサイズ
-
-    // 角丸パス（角丸半径: iOSアイコン風に約22%に設定。512pxに対して112px）
-    const radius = 112; 
-    ctx.beginPath();
-    ctx.moveTo(radius, 0);
-    ctx.lineTo(size - radius, 0);
-    ctx.quadraticCurveTo(size, 0, size, radius);
-    ctx.lineTo(size, size - radius);
-    ctx.quadraticCurveTo(size, size, size - radius, size);
-    ctx.lineTo(radius, size);
-    ctx.quadraticCurveTo(0, size, 0, size - radius);
-    ctx.lineTo(0, radius);
-    ctx.quadraticCurveTo(0, 0, radius, 0);
-    ctx.closePath();
-    ctx.clip(); // これにより、以降の描画が美しい角丸に制限されます
-
-    // 画像の描画（切り出して角丸にする）
-    ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, size, size);
-
-    // Data URLに変換し、タブやアプリアイコンに設定[cite: 1]
-    const iconDataUrl = canvas.toDataURL('image/png');
-
-    const favEl = document.getElementById('dynamic-favicon');
-    const appleEl = document.getElementById('dynamic-apple-icon');
-    if (favEl) favEl.href = iconDataUrl;
-    if (appleEl) appleEl.href = iconDataUrl;
-  };
-})();
-</script>
-<!-- ▲▲ アイコン動的切り出し & 角丸生成スクリプトここまで ▲▲ -->
 
 <script>
 (function () {
