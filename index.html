@@ -1519,7 +1519,11 @@
     signOut,
     GoogleAuthProvider,
     signInWithPopup,
-    linkWithPopup
+    linkWithPopup,
+    isSignInWithEmailLink,
+    signInWithEmailLink,
+    linkWithCredential,
+    EmailAuthProvider
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
   import {
     getFirestore,
@@ -1643,6 +1647,30 @@
       }
     }
   }
+
+  // signin.html から送信されたメールリンクでの戻りを検知し、ログインを完了させる
+  async function completeEmailLinkSignInIfNeeded() {
+    if (!isSignInWithEmailLink(auth, window.location.href)) return;
+    let email = window.localStorage.getItem('sunnyEmailForSignIn');
+    if (!email) {
+      email = window.prompt('確認のため、ログインに使用したメールアドレスを入力してください');
+    }
+    if (!email) return;
+    try {
+      if (auth.currentUser && auth.currentUser.isAnonymous) {
+        const credential = EmailAuthProvider.credentialWithLink(email, window.location.href);
+        await linkWithCredential(auth.currentUser, credential);
+      } else {
+        await signInWithEmailLink(auth, email, window.location.href);
+      }
+      window.localStorage.removeItem('sunnyEmailForSignIn');
+      // URL からログインリンクのクエリを取り除く
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (e) {
+      console.warn('[RT] メールリンクでのログインに失敗しました', e);
+    }
+  }
+  completeEmailLinkSignInIfNeeded();
 
   onAuthStateChanged(auth, function (user) {
     if (user) {
