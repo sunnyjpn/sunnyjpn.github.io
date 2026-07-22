@@ -203,6 +203,14 @@
     margin-bottom: 14px;
   }
 
+  #retrieving-text {
+    display: none;
+    font-size: clamp(20px, 4.5vw, 24px);
+    font-weight: 600;
+    opacity: 0.9;
+    text-align: center;
+  }
+
   #sub-text {
     font-size: clamp(17px, 4.2vw, 19px);
     line-height: 1.6;
@@ -1008,6 +1016,7 @@
     <div id="content">
       <h1 id="idle-title">Reaction Time Test</h1>
       <div id="main-text">Wait for green</div>
+      <div id="retrieving-text">Retrieving data...</div>
       <div id="sub-text">When the red box turns green,<br>tap as quickly as you can.</div>
       <p class="sr-only">反応速度テスト（Reaction Time Test）は、画面が緑色に変わった瞬間にタップして反応速度・リアクションタイムを測定する無料のオンラインツールです。ハイスコアと平均反応時間を記録し、結果をSNSでシェアできます。</p>
     </div>
@@ -1160,6 +1169,7 @@
   const box = document.getElementById('box');
   const idleTitle = document.getElementById('idle-title');
   const mainText = document.getElementById('main-text');
+  const retrievingText = document.getElementById('retrieving-text');
   const subText = document.getElementById('sub-text');
   const bestVal = document.getElementById('best-val');
   const worldVal = document.getElementById('world-val');
@@ -1265,6 +1275,7 @@
   let state = 'idle';
   let startTime = 0;
   let waitTimer = null;
+  let retrievingTimer = null;
   let lastResult = null;
   let bestScore = null;
   let attemptCount = 0;
@@ -1413,6 +1424,7 @@
         totalTimeSum,
         recentHistory,
         latestEvent: meta && meta.latestEvent ? meta.latestEvent : null,
+        isNewBest: !!(meta && meta.isNewBest),
         cloudSyncLocked: integrityState.cloudSyncLocked
       });
     }
@@ -1463,16 +1475,20 @@
   function setIdleScreen() {
     state = 'idle';
     clearTimeout(waitTimer);
+    clearTimeout(retrievingTimer);
     activeRound = null;
     box.style.backgroundColor = COLOR_IDLE;
     idleTitle.style.display = 'block';
     mainText.style.display = 'none';
+    if (retrievingText) retrievingText.style.display = 'none';
     subText.style.display = 'block';
     subText.innerHTML = getWaitInstructionHtml();
   }
 
   function setWaitingScreen() {
     state = 'waiting';
+    clearTimeout(retrievingTimer);
+    if (retrievingText) retrievingText.style.display = 'none';
     box.style.backgroundColor = COLOR_WAIT;
     idleTitle.style.display = 'none';
     mainText.style.display = 'block';
@@ -1501,6 +1517,8 @@
   function setTooSoonScreen() {
     state = 'toosoon';
     clearTimeout(waitTimer);
+    clearTimeout(retrievingTimer);
+    if (retrievingText) retrievingText.style.display = 'none';
     if (activeRound) activeRound.used = true;
     box.style.backgroundColor = COLOR_TOOSOON;
     idleTitle.style.display = 'none';
@@ -1509,6 +1527,28 @@
     subText.style.display = 'block';
     subText.textContent = getRetryText();
     vibrateFeedback([15, 40, 15]);
+  }
+
+  // タップ直後は0.5〜0.75秒「Retrieving data...」を表示してから結果画面へ遷移する。
+  // これにより、前の効果音（開始音）が鳴り終わってから結果音を再生でき、音の重なりを防止する。
+  const RETRIEVING_MIN_MS = 500;
+  const RETRIEVING_MAX_MS = 750;
+
+  function setRetrievingScreen(ms, verdict) {
+    state = 'retrieving';
+    clearTimeout(waitTimer);
+    clearTimeout(retrievingTimer);
+    box.style.backgroundColor = COLOR_RESULT;
+    idleTitle.style.display = 'none';
+    mainText.style.display = 'none';
+    subText.style.display = 'none';
+    if (retrievingText) retrievingText.style.display = 'block';
+
+    const delay = RETRIEVING_MIN_MS + Math.random() * (RETRIEVING_MAX_MS - RETRIEVING_MIN_MS);
+    retrievingTimer = setTimeout(function () {
+      if (retrievingText) retrievingText.style.display = 'none';
+      setResultScreen(ms, verdict);
+    }, delay);
   }
 
   function setResultScreen(ms, verdict) {
@@ -1529,7 +1569,7 @@
       if (recentHistory.length > RECENT_HISTORY_MAX) {
         recentHistory = recentHistory.slice(-RECENT_HISTORY_MAX);
       }
-      saveStats({ latestEvent: verdict && verdict.event ? verdict.event : null });
+      saveStats({ latestEvent: verdict && verdict.event ? verdict.event : null, isNewBest: isNewBest });
       renderStats();
     }
 
@@ -1593,7 +1633,16 @@
   }
 
   function onGameTap(event) {
+    // アカウントパネルや共有バーなど、ゲーム以外のUI操作はゲーム側に奪わない
+    if (event && event.target && event.target.closest) {
+      const uiSelector = '#account-toggle-btn, #account-panel, #share-bar, #ios-install-hint';
+      if (event.target.closest(uiSelector)) return;
+    }
+
     if (event) event.preventDefault();
+
+    // 結果集計中（Retrieving data...表示中）はタップを無視する
+    if (state === 'retrieving') return;
 
     if (state === 'idle' || state === 'result' || state === 'toosoon') {
       setWaitingScreen();
@@ -1609,7 +1658,7 @@
       const now = performance.now();
       const ms = Math.round(now - startTime);
       const verdict = validateRoundResult(ms, now);
-      setResultScreen(ms, verdict);
+      setRetrievingScreen(ms, verdict);
     }
   }
 
@@ -1882,8 +1931,7 @@
 
   let currentUid = null;
   let isSyncing = false;
-  const OFFLINE_QUEUE_KEY = 'reaction-time-sync-queue-v1';
-  const APPLIED_EVENT_IDS_MAX = 120;
+  const PENDING_BEST_KEY = 'reaction-time-pending-best-v1';
   const RECENT_HISTORY_MAX_SYNC = 5;
 
   function isPlausibleStats(s) {
@@ -1902,50 +1950,28 @@
       totalTimeSum: typeof s.totalTimeSum === 'number' ? s.totalTimeSum : 0,
       recentHistory: Array.isArray(s.recentHistory)
         ? s.recentHistory.filter(function (n) { return typeof n === 'number'; }).slice(-RECENT_HISTORY_MAX_SYNC)
-        : [],
-      appliedEventIds: Array.isArray(s.appliedEventIds)
-        ? s.appliedEventIds.map(function (id) { return String(id); }).slice(-APPLIED_EVENT_IDS_MAX)
         : []
     };
   }
 
-  function mergeAttemptIntoStats(stats, ms) {
-    const next = normalizeStats(stats);
-    next.attemptCount += 1;
-    next.totalTimeSum += ms;
-    if (next.bestScore === null || ms < next.bestScore) next.bestScore = ms;
-    next.recentHistory.push(ms);
-    if (next.recentHistory.length > RECENT_HISTORY_MAX_SYNC) {
-      next.recentHistory = next.recentHistory.slice(-RECENT_HISTORY_MAX_SYNC);
-    }
-    return next;
-  }
-
-  function readQueue() {
+  // ハイスコア更新時のみクラウドへ送るため、送信待ちの「最新のベスト記録」を1件だけ保持する
+  function readPendingBest() {
     try {
-      const raw = window.localStorage.getItem(OFFLINE_QUEUE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
+      const raw = window.localStorage.getItem(PENDING_BEST_KEY);
+      return raw ? JSON.parse(raw) : null;
     } catch (e) {
-      return [];
+      return null;
     }
   }
 
-  function writeQueue(queue) {
+  function writePendingBest(stats) {
     try {
-      window.localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify((queue || []).slice(-200)));
+      if (!stats) {
+        window.localStorage.removeItem(PENDING_BEST_KEY);
+        return;
+      }
+      window.localStorage.setItem(PENDING_BEST_KEY, JSON.stringify(normalizeStats(stats)));
     } catch (e) {}
-  }
-
-  function enqueueAttemptEvent(evt) {
-    if (!evt || typeof evt.ms !== 'number') return;
-    const queue = readQueue();
-    queue.push({
-      id: String(evt.id || ('evt-' + Date.now().toString(36))),
-      ms: Math.round(evt.ms),
-      createdAt: Number(evt.createdAt || Date.now())
-    });
-    writeQueue(queue);
   }
 
   function requestDeferredSync() {
@@ -1960,51 +1986,58 @@
     }).catch(function () {});
   }
 
-  async function flushPendingStats(force) {
-    if (!currentUid || isSyncing) return;
-    if (!force && !navigator.onLine) return;
-
-    const queued = readQueue();
-    if (!queued.length) return;
+  // ハイスコア更新時のみ呼ばれる。クラウド側の記録が既に同等以上なら何もしない。
+  async function syncBestScoreToCloud(stats, force) {
+    const normalized = normalizeStats(stats);
+    if (!currentUid) {
+      writePendingBest(normalized);
+      return;
+    }
+    if (!force && !navigator.onLine) {
+      writePendingBest(normalized);
+      return;
+    }
+    if (isSyncing) {
+      writePendingBest(normalized);
+      return;
+    }
 
     isSyncing = true;
     try {
       const ref = doc(db, 'users', currentUid);
       const snap = await getDoc(ref);
-      let merged = normalizeStats(snap.exists() ? snap.data() : null);
-      const applied = new Set(merged.appliedEventIds);
+      const remoteBest = snap.exists() && typeof snap.data().bestScore === 'number' ? snap.data().bestScore : null;
 
-      queued.forEach(function (evt) {
-        if (!evt || typeof evt.ms !== 'number') return;
-        const id = String(evt.id || '');
-        if (!id || applied.has(id)) return;
-        merged = mergeAttemptIntoStats(merged, Math.round(evt.ms));
-        applied.add(id);
-      });
-
-      merged.appliedEventIds = Array.from(applied).slice(-APPLIED_EVENT_IDS_MAX);
+      if (remoteBest !== null && normalized.bestScore !== null && remoteBest <= normalized.bestScore) {
+        // クラウド側が既に同等以上のハイスコアを持っている場合は送信不要
+        writePendingBest(null);
+        return;
+      }
 
       const payload = {
-        bestScore: merged.bestScore,
-        attemptCount: merged.attemptCount,
-        totalTimeSum: merged.totalTimeSum,
-        recentHistory: merged.recentHistory,
-        appliedEventIds: merged.appliedEventIds,
+        bestScore: normalized.bestScore,
+        attemptCount: normalized.attemptCount,
+        totalTimeSum: normalized.totalTimeSum,
+        recentHistory: normalized.recentHistory,
         updatedAt: serverTimestamp()
       };
       if (!snap.exists()) payload.createdAt = serverTimestamp();
 
       await setDoc(ref, payload, { merge: true });
-      writeQueue([]);
-      if (window.RT && window.RT.applyRemoteStats) {
-        window.RT.applyRemoteStats(merged);
-      }
+      writePendingBest(null);
     } catch (e) {
-      console.warn('[RT] キュー同期に失敗しました', e);
+      console.warn('[RT] ハイスコア同期に失敗しました', e);
+      writePendingBest(normalized);
       requestDeferredSync();
     } finally {
       isSyncing = false;
     }
+  }
+
+  function flushPendingStats(force) {
+    const pending = readPendingBest();
+    if (!pending) return Promise.resolve();
+    return syncBestScoreToCloud(pending, force);
   }
 
   async function pullAndMerge(uid) {
@@ -2012,25 +2045,33 @@
     try {
       const ref = doc(db, 'users', uid);
       const snap = await getDoc(ref);
+      const local = window.RT && window.RT.getStats ? normalizeStats(window.RT.getStats()) : null;
+
       if (snap.exists()) {
         const remote = normalizeStats(snap.data());
-        if (isPlausibleStats(remote) && window.RT && window.RT.applyRemoteStats) {
-          window.RT.applyRemoteStats(remote);
+        if (isPlausibleStats(remote)) {
+          if (local && local.bestScore !== null && (remote.bestScore === null || local.bestScore < remote.bestScore)) {
+            // 端末側の記録の方が良い場合はクラウド側を更新する
+            await setDoc(ref, {
+              bestScore: local.bestScore,
+              attemptCount: local.attemptCount,
+              totalTimeSum: local.totalTimeSum,
+              recentHistory: local.recentHistory,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+          } else if (window.RT && window.RT.applyRemoteStats) {
+            window.RT.applyRemoteStats(remote);
+          }
         }
-      } else {
-        const queued = readQueue();
-        if (!queued.length && window.RT && window.RT.getStats) {
-          const local = normalizeStats(window.RT.getStats());
-          await setDoc(ref, {
-            bestScore: local.bestScore,
-            attemptCount: local.attemptCount,
-            totalTimeSum: local.totalTimeSum,
-            recentHistory: local.recentHistory,
-            appliedEventIds: [],
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          }, { merge: true });
-        }
+      } else if (local) {
+        await setDoc(ref, {
+          bestScore: local.bestScore,
+          attemptCount: local.attemptCount,
+          totalTimeSum: local.totalTimeSum,
+          recentHistory: local.recentHistory,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
       }
     } catch (e) {
       console.warn('[RT] Firestore読み込みに失敗しました', e);
@@ -2044,12 +2085,15 @@
   window.RT.flushPendingStats = flushPendingStats;
   window.RT.requestDeferredSync = requestDeferredSync;
   window.RT.onSave = function (stats) {
-    if (stats && stats.latestEvent) {
-      enqueueAttemptEvent(stats.latestEvent);
-      requestDeferredSync();
-    }
-    if (stats && stats.cloudSyncLocked) return;
-    flushPendingStats(false);
+    if (!stats || stats.cloudSyncLocked) return;
+    // ハイスコアが更新された時だけクラウドへ同期する（毎回の試行は送信しない）
+    if (!stats.isNewBest) return;
+    syncBestScoreToCloud({
+      bestScore: stats.bestScore,
+      attemptCount: stats.attemptCount,
+      totalTimeSum: stats.totalTimeSum,
+      recentHistory: stats.recentHistory
+    }, false);
   };
 
   window.addEventListener('online', function () {
