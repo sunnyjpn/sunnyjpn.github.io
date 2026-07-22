@@ -127,7 +127,7 @@
 <!-- ▲▲ SEO設定ここまで ▲▲ -->
 
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c4a273">
+<meta name="theme-color" content="#2B87D1">
 
 <!-- ▼▼ アイコン・ファビコン初期設定（動的生成スクリプトが読み込まれるまでのフォールバック） ▼▼ -->
 <link rel="icon" href="favicon.ico">
@@ -147,7 +147,6 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5861952627500956" crossorigin="anonymous"></script>
 <!-- ▲▲ Google AdSenseここまで ▲▲ -->
 
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
   .sr-only {
@@ -165,8 +164,8 @@
     margin: 0;
     padding: 0;
     height: 100%;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: #0f1a16;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #111;
     scrollbar-width: none;      /* Firefox */
     -ms-overflow-style: none;   /* IE・Edge */
   }
@@ -198,8 +197,8 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    color: #f5ecd3;
-    background: #1c3a2e;
+    color: #fff;
+    background: #2B87D1;
     padding: var(--box-padding);
     cursor: pointer;
     user-select: none;
@@ -259,7 +258,7 @@
     border: 0;
     border-radius: 999px;
     background: rgba(255,255,255,0.16);
-    color: #f5ecd3;
+    color: #fff;
     padding: 10px 14px;
     min-height: 42px;
     font-size: 14px;
@@ -314,7 +313,7 @@
     justify-content: center;
     gap: 10px;
     background: rgba(0,0,0,0.55);
-    color: #f5ecd3;
+    color: #fff;
     font-size: 13px;
     line-height: 1.4;
     padding: 10px 14px;
@@ -366,7 +365,7 @@
     appearance: none;
     border: 0;
     background: transparent;
-    color: #f5ecd3;
+    color: #fff;
     font-size: 16px;
     line-height: 1;
     cursor: pointer;
@@ -473,8 +472,8 @@
   }
 
   #seo-content {
-    background: #0f1a16;
-    color: #f5ecd3;
+    background: #111;
+    color: #eaeaea;
     padding: 56px 20px 72px;
   }
 
@@ -487,7 +486,7 @@
     font-size: clamp(20px, 4vw, 26px);
     font-weight: 700;
     margin: 44px 0 16px;
-    color: #f5ecd3;
+    color: #fff;
   }
 
   #seo-content h2:first-child {
@@ -498,8 +497,8 @@
     font-size: clamp(16px, 3.5vw, 20px);
     font-weight: 700;
     margin: 28px 0 12px;
-    color: #f5ecd3;
-    border-left: 4px solid #c4a273;
+    color: #fff;
+    border-left: 4px solid #2B87D1;
     padding-left: 10px;
   }
 
@@ -543,7 +542,7 @@
   }
 
   #seo-table th {
-    color: #f5ecd3;
+    color: #fff;
     font-weight: 700;
     background: rgba(255,255,255,0.04);
   }
@@ -587,7 +586,7 @@
     left: 0;
     height: 3px;
     width: 0%;
-    background: #c4a273;
+    background: #2B87D1;
     z-index: 9999;
     transition: width 0.08s linear;
   }
@@ -661,7 +660,7 @@
     border-radius: 50%;
     border: 1px solid rgba(255,255,255,0.25);
     background: rgba(255,255,255,0.12);
-    color: #f5ecd3;
+    color: #fff;
     font-size: 14px;
     font-weight: 700;
     display: flex;
@@ -687,7 +686,7 @@
     max-width: calc(100vw - 28px);
     max-height: min(76vh, 560px);
     overflow-y: auto;
-    background: #16241d;
+    background: #17171b;
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 16px;
     padding: 18px;
@@ -734,7 +733,7 @@
   #account-panel .account-stat-value {
     font-size: 14px;
     font-weight: 700;
-    color: #f5ecd3;
+    color: #fff;
   }
 
   #account-panel label {
@@ -746,20 +745,20 @@
 
   #nickname-input {
     width: 100%;
-    background: #1e2a24;
+    background: #232328;
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 8px;
     padding: 8px 10px;
-    color: #f5ecd3;
+    color: #fff;
     font-size: 13px;
     margin-bottom: 8px;
   }
 
   #nickname-save-btn {
     width: 100%;
-    background: #c4a273;
+    background: #2B87D1;
     border: none;
-    color: #0f1a16;
+    color: #fff;
     border-radius: 8px;
     padding: 8px;
     font-size: 13px;
@@ -768,7 +767,7 @@
     margin-bottom: 14px;
   }
 
-  #nickname-save-btn:hover { background: #d8bd94; }
+  #nickname-save-btn:hover { background: #3a95de; }
 
   #account-google-btn,
   #account-logout-btn {
@@ -809,8 +808,8 @@
   }
 
   .account-tab-btn.active {
-    background: #c4a273;
-    color: #0f1a16;
+    background: #2B87D1;
+    color: #fff;
   }
 
   .friend-hint-text {
@@ -822,9 +821,9 @@
 
   #friend-google-btn {
     width: 100%;
-    background: #c4a273;
+    background: #2B87D1;
     border: none;
-    color: #0f1a16;
+    color: #fff;
     border-radius: 8px;
     padding: 9px;
     font-size: 13px;
@@ -832,7 +831,7 @@
     cursor: pointer;
   }
 
-  #friend-google-btn:hover { background: #d8bd94; }
+  #friend-google-btn:hover { background: #3a95de; }
 
   .friend-block { margin-bottom: 16px; }
   .friend-block:last-child { margin-bottom: 0; }
@@ -858,7 +857,7 @@
     flex: 1;
     font-size: 14px;
     font-weight: 700;
-    color: #f5ecd3;
+    color: #fff;
     letter-spacing: 0.03em;
     font-family: "SFMono-Regular", Consolas, monospace;
   }
@@ -866,7 +865,7 @@
   #friend-copy-code-btn {
     background: rgba(255,255,255,0.1);
     border: none;
-    color: #f5ecd3;
+    color: #fff;
     border-radius: 6px;
     padding: 5px 10px;
     font-size: 11.5px;
@@ -884,20 +883,20 @@
   #friend-add-input {
     flex: 1;
     min-width: 0;
-    background: #1e2a24;
+    background: #232328;
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 8px;
     padding: 8px 10px;
-    color: #f5ecd3;
+    color: #fff;
     font-size: 13px;
     text-transform: uppercase;
   }
 
   #friend-add-btn {
     flex-shrink: 0;
-    background: #c4a273;
+    background: #2B87D1;
     border: none;
-    color: #0f1a16;
+    color: #fff;
     border-radius: 8px;
     padding: 8px 12px;
     font-size: 13px;
@@ -905,7 +904,7 @@
     cursor: pointer;
   }
 
-  #friend-add-btn:hover { background: #d8bd94; }
+  #friend-add-btn:hover { background: #3a95de; }
   #friend-add-btn:disabled { opacity: 0.6; cursor: default; }
 
   .friend-status-text {
@@ -950,7 +949,7 @@
     min-width: 0;
     font-size: 12.5px;
     font-weight: 600;
-    color: #f5ecd3;
+    color: #fff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -986,8 +985,8 @@
     flex-shrink: 0;
   }
 
-  .friend-req-accept { background: #c4a273; color: #0f1a16; }
-  .friend-req-accept:hover { background: #d8bd94; }
+  .friend-req-accept { background: #2B87D1; color: #fff; }
+  .friend-req-accept:hover { background: #3a95de; }
   .friend-req-decline { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
   .friend-req-decline:hover { background: rgba(255,255,255,0.18); }
   /* ▲▲ フレンド機能ここまで ▲▲ */
@@ -1058,7 +1057,7 @@
   .record-flash-text {
     font-size: clamp(20px, 5vw, 28px);
     font-weight: 800;
-    color: #f5ecd3;
+    color: #fff;
     letter-spacing: 0.04em;
     text-shadow: 0 0 20px rgba(255,255,255,0.8);
     background: radial-gradient(circle, rgba(255,215,0,0.35), transparent 70%);
@@ -1117,7 +1116,7 @@
 
   #logout-btn:hover {
     background: rgba(255,255,255,0.08);
-    color: #f5ecd3;
+    color: #fff;
   }
 
   #login-splash {
@@ -1144,7 +1143,7 @@
   .login-splash-card {
     width: 100%;
     max-width: 400px;
-    background: #16241d;
+    background: #17171b;
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 20px;
     padding: 36px 28px;
@@ -1162,7 +1161,7 @@
     font-size: 21px;
     font-weight: 800;
     margin: 0 0 8px;
-    color: #f5ecd3;
+    color: #fff;
   }
 
   .login-splash-tagline {
@@ -1177,7 +1176,7 @@
     padding: 12px;
     border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.15);
-    background: #f5ecd3;
+    background: #fff;
     color: #1f1f1f;
     font-weight: 600;
     font-size: 14.5px;
@@ -1205,23 +1204,6 @@
     #login-splash, .login-splash-card { transition: none; }
   }
   /* ▲▲ ログイン誘導オーバーレイここまで ▲▲ */
-  /* ===== Concierge-inspired theme touches: serif headlines, gold selection ===== */
-  #idle-title,
-  #main-text,
-  .stat-value,
-  .account-stat-value {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-  }
-  #site-copyright {
-    text-align: center;
-    font-size: 11.5px;
-    letter-spacing: 0.04em;
-    color: rgba(245,236,211,0.4);
-    padding: 20px 16px calc(env(safe-area-inset-bottom) + 90px);
-  }
-  ::selection { background: #c4a273; color: #0f1a16; }
 </style>
 </head>
 <body translate="no" class="notranslate">
@@ -1263,8 +1245,7 @@
         </div>
 
         <label for="nickname-input">ニックネーム</label>
-        <input id="nickname-input" type="text" maxlength="18" placeholder="未設定">
-        <div id="nickname-error" style="display:none;font-size:11.5px;color:#ff6b6b;margin:-4px 0 8px;line-height:1.5;"></div>
+        <input id="nickname-input" type="text" maxlength="16" placeholder="未設定">
         <button id="nickname-save-btn" type="button">保存</button>
 
         <button id="account-google-btn" type="button" style="display:none;">Googleでログイン</button>
@@ -1435,8 +1416,6 @@
     </div>
   </section>
 
-  <div id="site-copyright">© 2026 SunnyJPN. All Rights Reserved.</div>
-
   <footer id="account-footer">
     <div id="account-footer-inner">
       <span id="account-footer-user"></span>
@@ -1458,17 +1437,17 @@
   const STORAGE_KEY = 'reaction-time-test-v3';
   const WORLD_AVERAGE = 250;
 
-  const COLOR_IDLE = '#1c3a2e';
-  const COLOR_WAIT = '#a8323f';
-  const COLOR_GO = '#4cb87d';
+  const COLOR_IDLE = '#2B87D1';
+  const COLOR_WAIT = '#CE2636';
+  const COLOR_GO = '#4BDB6A';
   const goSound = new Audio('go-sound.mp3');
   goSound.preload = 'auto';
   goSound.volume = 1.0; // この効果音のみ最大音量で再生する（音源自体も音量を上げ済み）
   const resultSound = new Audio('result-sound.mp3');
   resultSound.preload = 'auto';
   resultSound.volume = 0.85;
-  const COLOR_RESULT = '#1c3a2e';
-  const COLOR_TOOSOON = '#1c3a2e';
+  const COLOR_RESULT = '#2B87D1';
+  const COLOR_TOOSOON = '#2B87D1';
 
   const box = document.getElementById('box');
   const idleTitle = document.getElementById('idle-title');
@@ -2451,60 +2430,11 @@
     }
   }
 
-  // ニックネームのバリデーション。
-  // ・2〜18文字（サロゲートペア絵文字も1文字として正しく数えるため Array.from を使用）
-  // ・HTML/JSとして解釈されうる記号（< > & バッククォート等）を禁止
-  // ・SQL風の文字列（クォート、セミコロン、代表的なSQLキーワード、コメント記号）を禁止
-  // ・絵文字を禁止
-  // ※ サーバー側（firestore.rules）でも長さ・記号の最終チェックを行うため、
-  //   これはあくまでユーザーへの分かりやすいフィードバック用の一次防御線。
-  function getNicknameError(nickname) {
-    const chars = Array.from(nickname);
-
-    if (chars.length < 2 || chars.length > 18) {
-      return 'ニックネームは2〜18文字で入力してください。';
-    }
-    if (/[<>&`]/.test(nickname)) {
-      return 'ニックネームに < > & ` は使用できません。';
-    }
-    if (/javascript\s*:|<\s*script|on\w+\s*=|eval\s*\(|document\.|window\./i.test(nickname)) {
-      return 'ニックネームにプログラムのコードは使用できません。';
-    }
-    if (/(--)|(\/\*)|(;)|('|")|(\b(select|insert|update|delete|drop|union|exec|truncate|alter|create)\b)/i.test(nickname)) {
-      return 'ニックネームにその記号・文字列は使用できません。';
-    }
-    const emojiRegex = /[\u{1F1E6}-\u{1FFFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\uFE0F\u200D]/u;
-    if (emojiRegex.test(nickname)) {
-      return 'ニックネームに絵文字は使用できません。';
-    }
-    return null;
-  }
-
-  function setNicknameError(message) {
-    const errEl = document.getElementById('nickname-error');
-    if (!errEl) return;
-    if (message) {
-      errEl.textContent = message;
-      errEl.style.display = 'block';
-    } else {
-      errEl.textContent = '';
-      errEl.style.display = 'none';
-    }
-  }
-
   async function saveNickname() {
     const input = document.getElementById('nickname-input');
     const saveBtn = document.getElementById('nickname-save-btn');
     if (!input || !currentUid) return;
-    const nickname = input.value.trim();
-
-    const error = getNicknameError(nickname);
-    if (error) {
-      setNicknameError(error);
-      return;
-    }
-    setNicknameError(null);
-
+    const nickname = input.value.trim().slice(0, 16);
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中…'; }
     try {
       await setDoc(doc(db, 'users', currentUid), { nickname: nickname, updatedAt: serverTimestamp() }, { merge: true });
@@ -3033,12 +2963,6 @@
       document.addEventListener('click', function () {
         panel.classList.remove('open');
       });
-    }
-
-    const nicknameInputEl = document.getElementById('nickname-input');
-    if (nicknameInputEl && !nicknameInputEl.dataset.bound) {
-      nicknameInputEl.dataset.bound = '1';
-      nicknameInputEl.addEventListener('input', function () { setNicknameError(null); });
     }
 
     const nicknameSaveBtn = document.getElementById('nickname-save-btn');
