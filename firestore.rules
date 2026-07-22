@@ -39,10 +39,21 @@ service cloud.firestore {
         return request.resource.data.diff(before).affectedKeys().hasOnly(['nickname', 'friendCode']);
       }
 
-      // ニックネームは16文字以内の文字列（未設定なら空文字も許可）
+      // ニックネームは2〜18文字の文字列（未設定なら空文字も許可）。
+      // クライアント側（index.html）でも同等のチェックを行っているが、
+      // Firestoreへは誰でも直接APIを叩けてしまうため、ここでも最終防御として
+      // 長さと、HTML/JSインジェクションに使われがちな記号（< > & ` ' " ;）を検証する。
+      // 絵文字やSQLキーワードの検出はクライアント側のUXチェックに任せる
+      // （Firestore rulesの正規表現ではUnicodeプロパティクラスが使えないため）。
       function nicknameIsValid() {
         return !('nickname' in afterData())
-          || (afterData().nickname is string && afterData().nickname.size() <= 16);
+          || afterData().nickname == ''
+          || (
+            afterData().nickname is string
+            && afterData().nickname.size() >= 2
+            && afterData().nickname.size() <= 18
+            && !afterData().nickname.matches('.*[<>&`\'";].*')
+          );
       }
 
       // friendCode は SUN-XXXXXX 形式の文字列。

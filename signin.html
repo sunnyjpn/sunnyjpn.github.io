@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sunny にサインイン</title>
+<!-- ▼▼ CSP（index.htmlと同じ方針。詳細はindex.htmlのコメント参照） ▼▼ -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' https://www.gstatic.com https://pagead2.googlesyndication.com;
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: https:;
+  font-src 'self' data:;
+  connect-src 'self' https://*.googleapis.com https://pagead2.googlesyndication.com https://www.google.com;
+  frame-src https://www.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://pagead2.googlesyndication.com;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+">
+<!-- ▲▲ CSPここまで ▲▲ -->
 <!-- ▼▼ Google AdSense（サイト全体のタグ設置。このページには広告ユニットは配置していません） ▼▼ -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5861952627500956" crossorigin="anonymous"></script>
 <!-- ▲▲ Google AdSenseここまで ▲▲ -->
