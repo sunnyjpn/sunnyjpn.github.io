@@ -19,9 +19,9 @@
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self' 'unsafe-inline' https://www.gstatic.com https://pagead2.googlesyndication.com https://static.cloudflareinsights.com https://www.googletagmanager.com;
-  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  style-src 'self' 'unsafe-inline';
   img-src 'self' data: https:;
-  font-src 'self' data: https://fonts.gstatic.com;
+  font-src 'self' data:;
   connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://www.google-analytics.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://static.cloudflareinsights.com https://www.google.com;
   frame-src https://www.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://pagead2.googlesyndication.com;
   object-src 'none';
@@ -1207,15 +1207,12 @@
   /* ▲▲ ログイン誘導オーバーレイここまで ▲▲ */
   /* ===== Concierge-inspired theme touches: serif headlines, gold selection ===== */
   #idle-title,
-  #main-text {
+  #main-text,
+  .stat-value,
+  .account-stat-value {
     font-family: 'Cormorant Garamond', Georgia, serif;
     font-weight: 500;
     letter-spacing: 0.01em;
-  }
-  .stat-value,
-  .account-stat-value {
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum" 1, "lnum" 1;
   }
   #site-copyright {
     text-align: center;
