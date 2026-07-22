@@ -1007,6 +1007,89 @@
   const bestRecordFlash = document.getElementById('best-record-flash');
 
   const RECENT_HISTORY_MAX = 5;
+  const MIN_REACTION_MS = 80;
+  const MAX_REACTION_MS = 3000;
+  const ROUND_EARLY_TOLERANCE_MS = 24;
+  const SUSPICIOUS_LIMIT = 3;
+
+  let integrityState = {
+    cloudSyncLocked: false,
+    suspiciousAttempts: 0,
+    lastReason: ''
+  };
+  let activeRound = null;
+
+  function createRoundNonce() {
+    try {
+      const buf = new Uint32Array(2);
+      crypto.getRandomValues(buf);
+      return Array.from(buf).map(function (v) { return v.toString(36); }).join('');
+    } catch (e) {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    }
+  }
+
+  function beginIntegrityRound(delay) {
+    activeRound = {
+      id: createRoundNonce(),
+      armedAt: performance.now(),
+      scheduledDelay: delay,
+      readyAt: 0,
+      hidden: document.hidden,
+      used: false
+    };
+  }
+
+  function markRoundReady() {
+    if (activeRound) activeRound.readyAt = performance.now();
+  }
+
+  function flagSuspicious(reason) {
+    integrityState.suspiciousAttempts += 1;
+    integrityState.lastReason = reason;
+    if (integrityState.suspiciousAttempts >= SUSPICIOUS_LIMIT) {
+      integrityState.cloudSyncLocked = true;
+    }
+    return { ok: false, reason: reason };
+  }
+
+  function buildAttemptEvent(ms) {
+    return {
+      id: createRoundNonce() + '-' + Date.now().toString(36),
+      ms: Math.round(ms),
+      createdAt: Date.now()
+    };
+  }
+
+  function validateRoundResult(ms, now) {
+    if (integrityState.cloudSyncLocked) {
+      return flagSuspicious('不審な入力が続いたため、クラウド記録を一時停止しています');
+    }
+    if (!activeRound || activeRound.used) {
+      return flagSuspicious('ラウンド状態の整合性が取れませんでした');
+    }
+    activeRound.used = true;
+    if (!Number.isFinite(ms) || ms < MIN_REACTION_MS || ms > MAX_REACTION_MS) {
+      return flagSuspicious('異常に速い、または無効な反応時間を検出しました');
+    }
+    if (!activeRound.readyAt) {
+      return flagSuspicious('開始トリガーが不正です');
+    }
+    const elapsedSinceArmed = now - activeRound.armedAt;
+    if (elapsedSinceArmed + ROUND_EARLY_TOLERANCE_MS < activeRound.scheduledDelay) {
+      return flagSuspicious('待機時間の短縮が検出されました');
+    }
+    if (activeRound.hidden || document.hidden) {
+      return flagSuspicious('バックグラウンド状態の試行は記録対象外です');
+    }
+    return { ok: true, event: buildAttemptEvent(ms) };
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (activeRound && (state === 'waiting' || state === 'ready') && document.hidden) {
+      activeRound.hidden = true;
+    }
+  });
 
   const labelState = {
     actionWord: 'Click',
@@ -1147,7 +1230,7 @@
     } catch (e) {}
   }
 
-  function saveStats() {
+  function saveStats(meta) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         bestScore,
@@ -1159,7 +1242,14 @@
 
     // Firebase同期フック（後段のmoduleスクリプトが登録する）
     if (window.RT && typeof window.RT.onSave === 'function') {
-      window.RT.onSave({ bestScore, attemptCount, totalTimeSum, recentHistory });
+      window.RT.onSave({
+        bestScore,
+        attemptCount,
+        totalTimeSum,
+        recentHistory,
+        latestEvent: meta && meta.latestEvent ? meta.latestEvent : null,
+        cloudSyncLocked: integrityState.cloudSyncLocked
+      });
     }
   }
 
@@ -1172,7 +1262,13 @@
   // Firebase側から呼ばれる：クラウドの記録をローカル状態へ反映する
   window.RT = window.RT || {};
   window.RT.getStats = function () {
-    return { bestScore, attemptCount, totalTimeSum, recentHistory };
+    return {
+      bestScore,
+      attemptCount,
+      totalTimeSum,
+      recentHistory,
+      cloudSyncLocked: integrityState.cloudSyncLocked
+    };
   };
   window.RT.applyRemoteStats = function (remote) {
     if (!remote) return;
@@ -1195,6 +1291,7 @@
   function setIdleScreen() {
     state = 'idle';
     clearTimeout(waitTimer);
+    activeRound = null;
     box.style.backgroundColor = COLOR_IDLE;
     idleTitle.style.display = 'block';
     mainText.style.display = 'none';
@@ -1211,6 +1308,7 @@
     subText.style.display = 'none';
 
     const delay = 2000 + Math.random() * 3000;
+    beginIntegrityRound(delay);
     waitTimer = setTimeout(setReadyScreen, delay);
   }
 
@@ -1220,12 +1318,14 @@
     mainText.textContent = labelState.actionWord + '!';
     subText.style.display = 'none';
     startTime = performance.now();
+    markRoundReady();
     vibrateFeedback(40);
   }
 
   function setTooSoonScreen() {
     state = 'toosoon';
     clearTimeout(waitTimer);
+    if (activeRound) activeRound.used = true;
     box.style.backgroundColor = COLOR_TOOSOON;
     idleTitle.style.display = 'none';
     mainText.style.display = 'block';
@@ -1235,36 +1335,44 @@
     vibrateFeedback([15, 40, 15]);
   }
 
-  function setResultScreen(ms) {
+  function setResultScreen(ms, verdict) {
     state = 'result';
     lastResult = ms;
-    attemptCount += 1;
-    totalTimeSum += ms;
+
+    const accepted = !verdict || verdict.ok !== false;
     let isNewBest = false;
-    if (bestScore === null || ms < bestScore) {
-      bestScore = ms;
-      isNewBest = true;
+
+    if (accepted) {
+      attemptCount += 1;
+      totalTimeSum += ms;
+      if (bestScore === null || ms < bestScore) {
+        bestScore = ms;
+        isNewBest = true;
+      }
+      recentHistory.push(ms);
+      if (recentHistory.length > RECENT_HISTORY_MAX) {
+        recentHistory = recentHistory.slice(-RECENT_HISTORY_MAX);
+      }
+      saveStats({ latestEvent: verdict && verdict.event ? verdict.event : null });
+      renderStats();
     }
-    recentHistory.push(ms);
-    if (recentHistory.length > RECENT_HISTORY_MAX) {
-      recentHistory = recentHistory.slice(-RECENT_HISTORY_MAX);
-    }
-    saveStats();
-    renderStats();
-    vibrateFeedback(isNewBest ? [30, 40, 30] : 25);
+
+    vibrateFeedback(accepted && isNewBest ? [30, 40, 30] : 25);
 
     box.style.backgroundColor = COLOR_RESULT;
     idleTitle.style.display = 'none';
     mainText.style.display = 'block';
     mainText.textContent = ms + ' ms';
     subText.style.display = 'block';
-    subText.textContent = getContinueText();
+    subText.textContent = accepted
+      ? getContinueText()
+      : ('参考値（記録対象外）: ' + (verdict && verdict.reason ? verdict.reason : '不審な入力を検出') + ' / ' + getContinueText());
 
     mainText.classList.remove('pulse-ms');
     void mainText.offsetWidth;
     mainText.classList.add('pulse-ms');
 
-    if (isNewBest && bestRecordFlash) {
+    if (accepted && isNewBest && bestRecordFlash) {
       bestRecordFlash.classList.remove('show');
       void bestRecordFlash.offsetWidth;
       bestRecordFlash.classList.add('show');
@@ -1313,8 +1421,10 @@
     }
 
     if (state === 'ready') {
-      const ms = Math.round(performance.now() - startTime);
-      setResultScreen(ms);
+      const now = performance.now();
+      const ms = Math.round(now - startTime);
+      const verdict = validateRoundResult(ms, now);
+      setResultScreen(ms, verdict);
     }
   }
 
@@ -1567,8 +1677,10 @@
 
   let currentUid = null;
   let isSyncing = false;
+  const OFFLINE_QUEUE_KEY = 'reaction-time-sync-queue-v1';
+  const APPLIED_EVENT_IDS_MAX = 120;
+  const RECENT_HISTORY_MAX_SYNC = 5;
 
-  // クライアント側での最低限の妥当性チェック（不正/異常値の書き込み防止の一次防波堤）
   function isPlausibleStats(s) {
     if (!s) return false;
     if (s.bestScore !== null && (typeof s.bestScore !== 'number' || s.bestScore < 50 || s.bestScore > 3000)) return false;
@@ -1577,47 +1689,179 @@
     return true;
   }
 
-  async function pushToFirestore(stats) {
-    if (!currentUid || isSyncing || !isPlausibleStats(stats)) return;
+  function normalizeStats(source) {
+    const s = source || {};
+    return {
+      bestScore: typeof s.bestScore === 'number' ? s.bestScore : null,
+      attemptCount: typeof s.attemptCount === 'number' ? s.attemptCount : 0,
+      totalTimeSum: typeof s.totalTimeSum === 'number' ? s.totalTimeSum : 0,
+      recentHistory: Array.isArray(s.recentHistory)
+        ? s.recentHistory.filter(function (n) { return typeof n === 'number'; }).slice(-RECENT_HISTORY_MAX_SYNC)
+        : [],
+      appliedEventIds: Array.isArray(s.appliedEventIds)
+        ? s.appliedEventIds.map(function (id) { return String(id); }).slice(-APPLIED_EVENT_IDS_MAX)
+        : []
+    };
+  }
+
+  function mergeAttemptIntoStats(stats, ms) {
+    const next = normalizeStats(stats);
+    next.attemptCount += 1;
+    next.totalTimeSum += ms;
+    if (next.bestScore === null || ms < next.bestScore) next.bestScore = ms;
+    next.recentHistory.push(ms);
+    if (next.recentHistory.length > RECENT_HISTORY_MAX_SYNC) {
+      next.recentHistory = next.recentHistory.slice(-RECENT_HISTORY_MAX_SYNC);
+    }
+    return next;
+  }
+
+  function readQueue() {
     try {
-      await setDoc(doc(db, 'users', currentUid), {
-        bestScore: stats.bestScore,
-        attemptCount: stats.attemptCount,
-        totalTimeSum: stats.totalTimeSum,
-        recentHistory: stats.recentHistory || [],
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+      const raw = window.localStorage.getItem(OFFLINE_QUEUE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      console.warn('[RT] Firestore書き込みに失敗しました', e);
+      return [];
+    }
+  }
+
+  function writeQueue(queue) {
+    try {
+      window.localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify((queue || []).slice(-200)));
+    } catch (e) {}
+  }
+
+  function enqueueAttemptEvent(evt) {
+    if (!evt || typeof evt.ms !== 'number') return;
+    const queue = readQueue();
+    queue.push({
+      id: String(evt.id || ('evt-' + Date.now().toString(36))),
+      ms: Math.round(evt.ms),
+      createdAt: Number(evt.createdAt || Date.now())
+    });
+    writeQueue(queue);
+  }
+
+  function requestDeferredSync() {
+    if (!('serviceWorker' in navigator)) return Promise.resolve();
+    return navigator.serviceWorker.ready.then(function (registration) {
+      if (registration && registration.sync) {
+        return registration.sync.register('reaction-time-stats-sync').catch(function () {});
+      }
+      if (registration && registration.active) {
+        registration.active.postMessage({ type: 'RT_REQUEST_SYNC' });
+      }
+    }).catch(function () {});
+  }
+
+  async function flushPendingStats(force) {
+    if (!currentUid || isSyncing) return;
+    if (!force && !navigator.onLine) return;
+
+    const queued = readQueue();
+    if (!queued.length) return;
+
+    isSyncing = true;
+    try {
+      const ref = doc(db, 'users', currentUid);
+      const snap = await getDoc(ref);
+      let merged = normalizeStats(snap.exists() ? snap.data() : null);
+      const applied = new Set(merged.appliedEventIds);
+
+      queued.forEach(function (evt) {
+        if (!evt || typeof evt.ms !== 'number') return;
+        const id = String(evt.id || '');
+        if (!id || applied.has(id)) return;
+        merged = mergeAttemptIntoStats(merged, Math.round(evt.ms));
+        applied.add(id);
+      });
+
+      merged.appliedEventIds = Array.from(applied).slice(-APPLIED_EVENT_IDS_MAX);
+
+      const payload = {
+        bestScore: merged.bestScore,
+        attemptCount: merged.attemptCount,
+        totalTimeSum: merged.totalTimeSum,
+        recentHistory: merged.recentHistory,
+        appliedEventIds: merged.appliedEventIds,
+        updatedAt: serverTimestamp()
+      };
+      if (!snap.exists()) payload.createdAt = serverTimestamp();
+
+      await setDoc(ref, payload, { merge: true });
+      writeQueue([]);
+      if (window.RT && window.RT.applyRemoteStats) {
+        window.RT.applyRemoteStats(merged);
+      }
+    } catch (e) {
+      console.warn('[RT] キュー同期に失敗しました', e);
+      requestDeferredSync();
+    } finally {
+      isSyncing = false;
     }
   }
 
   async function pullAndMerge(uid) {
     isSyncing = true;
     try {
-      const snap = await getDoc(doc(db, 'users', uid));
+      const ref = doc(db, 'users', uid);
+      const snap = await getDoc(ref);
       if (snap.exists()) {
-        const remote = snap.data();
+        const remote = normalizeStats(snap.data());
         if (isPlausibleStats(remote) && window.RT && window.RT.applyRemoteStats) {
           window.RT.applyRemoteStats(remote);
         }
-      } else if (window.RT && window.RT.getStats) {
-        // クラウド側に記録がまだ無ければ、現在のローカル記録を初期値として作成
-        await setDoc(doc(db, 'users', uid), {
-          ...window.RT.getStats(),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
+      } else {
+        const queued = readQueue();
+        if (!queued.length && window.RT && window.RT.getStats) {
+          const local = normalizeStats(window.RT.getStats());
+          await setDoc(ref, {
+            bestScore: local.bestScore,
+            attemptCount: local.attemptCount,
+            totalTimeSum: local.totalTimeSum,
+            recentHistory: local.recentHistory,
+            appliedEventIds: [],
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
       }
     } catch (e) {
       console.warn('[RT] Firestore読み込みに失敗しました', e);
     } finally {
       isSyncing = false;
     }
+    flushPendingStats(true);
   }
 
   window.RT = window.RT || {};
-  window.RT.onSave = function (stats) { pushToFirestore(stats); };
+  window.RT.flushPendingStats = flushPendingStats;
+  window.RT.requestDeferredSync = requestDeferredSync;
+  window.RT.onSave = function (stats) {
+    if (stats && stats.latestEvent) {
+      enqueueAttemptEvent(stats.latestEvent);
+      requestDeferredSync();
+    }
+    if (stats && stats.cloudSyncLocked) return;
+    flushPendingStats(false);
+  };
+
+  window.addEventListener('online', function () {
+    flushPendingStats(true);
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) flushPendingStats(false);
+  });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', function (event) {
+      if (event && event.data && event.data.type === 'RT_FLUSH_SYNC') {
+        flushPendingStats(true);
+      }
+    });
+  }
 
   // 匿名アカウントからGoogleアカウントへ、記録を引き継いだまま昇格させる
   window.RT.signInWithGoogle = async function () {
@@ -1750,5 +1994,6 @@
 <!-- ▲▲ Firebaseここまで ▲▲ -->
 
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

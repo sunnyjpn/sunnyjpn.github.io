@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reaction-time-test-cache-v1';
+const CACHE_NAME = 'reaction-time-test-cache-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -58,4 +58,23 @@ self.addEventListener('fetch', function (event) {
       return cached || network;
     })
   );
+});
+
+
+function notifyClients(type) {
+  return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clients) {
+    clients.forEach(function (client) {
+      client.postMessage({ type: type });
+    });
+  });
+}
+
+self.addEventListener('sync', function (event) {
+  if (event.tag !== 'reaction-time-stats-sync') return;
+  event.waitUntil(notifyClients('RT_FLUSH_SYNC'));
+});
+
+self.addEventListener('message', function (event) {
+  if (!event.data || event.data.type !== 'RT_REQUEST_SYNC') return;
+  event.waitUntil(notifyClients('RT_FLUSH_SYNC'));
 });
