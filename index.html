@@ -6,6 +6,16 @@
 <meta name="google" content="notranslate">
 <meta name="google-site-verification" content="2LcM6p26drIHs5ExNlWPkK-7-iWjDLfdfwgiQJIiaEc">
 
+<!-- ▼▼ サイトを開いたら自動的にサインインページへ移動 ▼▼ -->
+<script>
+  (function () {
+    if (!/\/signin(\.html)?\/?$/.test(window.location.pathname)) {
+      window.location.replace('./signin.html');
+    }
+  })();
+</script>
+<!-- ▲▲ 自動リダイレクトここまで ▲▲ -->
+
 <!-- ▼▼ SEO: サイトを公開するドメインに合わせて以下のURLを置き換えてください ▼▼ -->
 <title>反応速度テスト（Reaction Time Test）| 無料で今すぐリアクションタイム測定</title>
 <meta name="description" content="反応速度テスト（Reaction Time Test）は、緑色に変わった瞬間にタップするだけで自分の反応速度（リアクションタイム）を無料で測定できるWebアプリです。ハイスコアや平均反応時間を記録し、友達と結果をシェアして競い合えます。">
@@ -1519,7 +1529,11 @@
     signOut,
     GoogleAuthProvider,
     signInWithPopup,
-    linkWithPopup
+    linkWithPopup,
+    isSignInWithEmailLink,
+    signInWithEmailLink,
+    linkWithCredential,
+    EmailAuthProvider
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
   import {
     getFirestore,
@@ -1643,6 +1657,30 @@
       }
     }
   }
+
+  // signin.html から送信されたメールリンクでの戻りを検知し、ログインを完了させる
+  async function completeEmailLinkSignInIfNeeded() {
+    if (!isSignInWithEmailLink(auth, window.location.href)) return;
+    let email = window.localStorage.getItem('sunnyEmailForSignIn');
+    if (!email) {
+      email = window.prompt('確認のため、ログインに使用したメールアドレスを入力してください');
+    }
+    if (!email) return;
+    try {
+      if (auth.currentUser && auth.currentUser.isAnonymous) {
+        const credential = EmailAuthProvider.credentialWithLink(email, window.location.href);
+        await linkWithCredential(auth.currentUser, credential);
+      } else {
+        await signInWithEmailLink(auth, email, window.location.href);
+      }
+      window.localStorage.removeItem('sunnyEmailForSignIn');
+      // URL からログインリンクのクエリを取り除く
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (e) {
+      console.warn('[RT] メールリンクでのログインに失敗しました', e);
+    }
+  }
+  completeEmailLinkSignInIfNeeded();
 
   onAuthStateChanged(auth, function (user) {
     if (user) {
