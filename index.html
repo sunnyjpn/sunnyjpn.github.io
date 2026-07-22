@@ -600,6 +600,106 @@
     }
   }
   /* ▲▲ スクロール演出ここまで ▲▲ */
+
+  /* ▼▼ 追加演出（Ripple／マウス追従ライト／ベスト更新／パルス／背景グラデーション） ▼▼ */
+  #content { position: relative; z-index: 1; }
+
+  #box::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(43,135,209,0.35), rgba(155,89,209,0.30), rgba(43,135,209,0.35));
+    background-size: 220% 220%;
+    mix-blend-mode: overlay;
+    opacity: 0.55;
+    pointer-events: none;
+    animation: bg-drift 30s ease-in-out infinite;
+    z-index: 0;
+  }
+
+  @keyframes bg-drift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  #box::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.16), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #box.has-light::after { opacity: 1; }
+
+  .share-btn { position: relative; overflow: hidden; }
+
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.55);
+    transform: scale(0);
+    opacity: 1;
+    pointer-events: none;
+    animation: ripple-anim 0.6s ease-out forwards;
+  }
+
+  @keyframes ripple-anim {
+    to { transform: scale(2.6); opacity: 0; }
+  }
+
+  #best-record-flash {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0;
+  }
+
+  #best-record-flash.show {
+    animation: record-flash 0.8s ease-out forwards;
+  }
+
+  .record-flash-text {
+    font-size: clamp(20px, 5vw, 28px);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 20px rgba(255,255,255,0.8);
+    background: radial-gradient(circle, rgba(255,215,0,0.35), transparent 70%);
+    padding: 18px 36px;
+    border-radius: 20px;
+  }
+
+  @keyframes record-flash {
+    0%   { opacity: 0; transform: scale(0.7); }
+    30%  { opacity: 1; transform: scale(1.08); }
+    70%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1); }
+  }
+
+  #main-text.pulse-ms {
+    animation: ms-pulse 0.3s ease-out;
+  }
+
+  @keyframes ms-pulse {
+    0%   { transform: scale(0.95); }
+    50%  { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #box::before, #box::after { animation: none; opacity: 0; }
+    #best-record-flash.show { animation: none; opacity: 0; }
+    #main-text.pulse-ms { animation: none; }
+  }
+  /* ▲▲ 追加演出ここまで ▲▲ */
 </style>
 </head>
 <body translate="no" class="notranslate">
@@ -612,6 +712,7 @@
       <button id="install-btn" class="share-btn" type="button" style="display:none;">ホーム画面に追加</button>
       <button id="share-native" class="share-btn" type="button" style="display:none;">共有</button>
       <button id="share-x" class="share-btn" type="button">Xで共有</button>
+      <button id="google-login-btn" class="share-btn" type="button">Googleでログイン</button>
     </div>
 
     <div id="content">
@@ -640,6 +741,10 @@
       <span id="ios-install-hint-text" aria-hidden="true"></span>
       <span class="sr-only">共有アイコンから「ホーム画面に追加」でアプリのように使えます</span>
       <button id="ios-install-hint-close" type="button" aria-label="閉じる">×</button>
+    </div>
+
+    <div id="best-record-flash" aria-hidden="true">
+      <span class="record-flash-text">★ NEW RECORD! ★</span>
     </div>
   </div>
 
@@ -754,6 +859,7 @@
   const installBtn = document.getElementById('install-btn');
   const iosHint = document.getElementById('ios-install-hint');
   const iosHintClose = document.getElementById('ios-install-hint-close');
+  const bestRecordFlash = document.getElementById('best-record-flash');
 
   const RECENT_HISTORY_MAX = 5;
 
@@ -905,6 +1011,11 @@
         recentHistory
       }));
     } catch (e) {}
+
+    // Firebase同期フック（後段のmoduleスクリプトが登録する）
+    if (window.RT && typeof window.RT.onSave === 'function') {
+      window.RT.onSave({ bestScore, attemptCount, totalTimeSum, recentHistory });
+    }
   }
 
   function renderStats() {
@@ -912,6 +1023,23 @@
     worldVal.textContent = WORLD_AVERAGE + ' ms';
     avgVal.textContent = attemptCount === 0 ? '–' : Math.round(totalTimeSum / attemptCount) + ' ms';
   }
+
+  // Firebase側から呼ばれる：クラウドの記録をローカル状態へ反映する
+  window.RT = window.RT || {};
+  window.RT.getStats = function () {
+    return { bestScore, attemptCount, totalTimeSum, recentHistory };
+  };
+  window.RT.applyRemoteStats = function (remote) {
+    if (!remote) return;
+    if (typeof remote.bestScore === 'number') bestScore = remote.bestScore;
+    if (typeof remote.attemptCount === 'number') attemptCount = remote.attemptCount;
+    if (typeof remote.totalTimeSum === 'number') totalTimeSum = remote.totalTimeSum;
+    if (Array.isArray(remote.recentHistory)) recentHistory = remote.recentHistory.slice(-RECENT_HISTORY_MAX);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ bestScore, attemptCount, totalTimeSum, recentHistory }));
+    } catch (e) {}
+    renderStats();
+  };
 
   function vibrateFeedback(pattern) {
     if (navigator.vibrate) {
@@ -986,6 +1114,16 @@
     mainText.textContent = ms + ' ms';
     subText.style.display = 'block';
     subText.textContent = getContinueText();
+
+    mainText.classList.remove('pulse-ms');
+    void mainText.offsetWidth;
+    mainText.classList.add('pulse-ms');
+
+    if (isNewBest && bestRecordFlash) {
+      bestRecordFlash.classList.remove('show');
+      void bestRecordFlash.offsetWidth;
+      bestRecordFlash.classList.add('show');
+    }
   }
 
   function shareText() {
@@ -1092,6 +1230,36 @@
     installBtn.style.display = 'none';
     deferredInstallPrompt = null;
   });
+
+  // ボタンのクリック波紋（Ripple）
+  document.querySelectorAll('.share-btn').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      ripple.style.width = ripple.style.height = size + 'px';
+      const x = (e.clientX !== undefined ? e.clientX - rect.left : rect.width / 2) - size / 2;
+      const y = (e.clientY !== undefined ? e.clientY - rect.top : rect.height / 2) - size / 2;
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      btn.appendChild(ripple);
+      ripple.addEventListener('animationend', function () { ripple.remove(); });
+    });
+  });
+
+  // マウス追従ライト（PC・非タッチ端末のみ）
+  if (window.matchMedia('(pointer: fine)').matches && !prefersReducedMotion) {
+    box.addEventListener('pointerenter', function () { box.classList.add('has-light'); });
+    box.addEventListener('pointerleave', function () { box.classList.remove('has-light'); });
+    box.addEventListener('pointermove', function (e) {
+      const rect = box.getBoundingClientRect();
+      const mx = ((e.clientX - rect.left) / rect.width) * 100;
+      const my = ((e.clientY - rect.top) / rect.height) * 100;
+      box.style.setProperty('--mx', mx + '%');
+      box.style.setProperty('--my', my + '%');
+    });
+  }
 
   (function maybeShowIosHint() {
     const ua = navigator.userAgent || '';
@@ -1208,6 +1376,159 @@
   }
 })();
 </script>
+
+<!-- ▼▼ Firebase: 匿名/Googleログイン＋自己記録のクラウド同期（第1段階） ▼▼ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import {
+    getAuth,
+    signInAnonymously,
+    onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup,
+    linkWithPopup
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+  import { getAnalytics, isSupported as analyticsIsSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDItQuV-iIkiZGMS4RGLC7phv6qqkp0gBM",
+    authDomain: "reaction-time-test-27e65.firebaseapp.com",
+    projectId: "reaction-time-test-27e65",
+    storageBucket: "reaction-time-test-27e65.firebasestorage.app",
+    messagingSenderId: "122036959627",
+    appId: "1:122036959627:web:afba50ad85085181cf178e",
+    measurementId: "G-XQNYGFCSWY"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  analyticsIsSupported().then(function (supported) {
+    if (supported) getAnalytics(app);
+  }).catch(function () {});
+
+  let currentUid = null;
+  let isSyncing = false;
+
+  // クライアント側での最低限の妥当性チェック（不正/異常値の書き込み防止の一次防波堤）
+  function isPlausibleStats(s) {
+    if (!s) return false;
+    if (s.bestScore !== null && (typeof s.bestScore !== 'number' || s.bestScore < 50 || s.bestScore > 3000)) return false;
+    if (typeof s.attemptCount !== 'number' || s.attemptCount < 0 || s.attemptCount > 1000000) return false;
+    if (typeof s.totalTimeSum !== 'number' || s.totalTimeSum < 0) return false;
+    return true;
+  }
+
+  async function pushToFirestore(stats) {
+    if (!currentUid || isSyncing || !isPlausibleStats(stats)) return;
+    try {
+      await setDoc(doc(db, 'users', currentUid), {
+        bestScore: stats.bestScore,
+        attemptCount: stats.attemptCount,
+        totalTimeSum: stats.totalTimeSum,
+        recentHistory: stats.recentHistory || [],
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('[RT] Firestore書き込みに失敗しました', e);
+    }
+  }
+
+  async function pullAndMerge(uid) {
+    isSyncing = true;
+    try {
+      const snap = await getDoc(doc(db, 'users', uid));
+      if (snap.exists()) {
+        const remote = snap.data();
+        if (isPlausibleStats(remote) && window.RT && window.RT.applyRemoteStats) {
+          window.RT.applyRemoteStats(remote);
+        }
+      } else if (window.RT && window.RT.getStats) {
+        // クラウド側に記録がまだ無ければ、現在のローカル記録を初期値として作成
+        await setDoc(doc(db, 'users', uid), {
+          ...window.RT.getStats(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+    } catch (e) {
+      console.warn('[RT] Firestore読み込みに失敗しました', e);
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  window.RT = window.RT || {};
+  window.RT.onSave = function (stats) { pushToFirestore(stats); };
+
+  // 匿名アカウントからGoogleアカウントへ、記録を引き継いだまま昇格させる
+  window.RT.signInWithGoogle = async function () {
+    const provider = new GoogleAuthProvider();
+    try {
+      if (auth.currentUser && auth.currentUser.isAnonymous) {
+        await linkWithPopup(auth.currentUser, provider);
+      } else {
+        await signInWithPopup(auth, provider);
+      }
+    } catch (e) {
+      console.warn('[RT] Googleログインに失敗しました', e);
+      // 既に他デバイスでそのGoogleアカウントを使用済みの場合はこちらにフォールバック
+      if (e && e.code === 'auth/credential-already-in-use') {
+        try { await signInWithPopup(auth, provider); } catch (e2) { console.warn('[RT] フォールバックログインも失敗', e2); }
+      }
+    }
+  };
+
+  onAuthStateChanged(auth, function (user) {
+    const loginBtn = document.getElementById('google-login-btn');
+    if (user) {
+      currentUid = user.uid;
+      pullAndMerge(user.uid);
+      if (loginBtn) {
+        if (user.isAnonymous) {
+          loginBtn.textContent = 'Googleでログイン';
+          loginBtn.disabled = false;
+        } else {
+          loginBtn.textContent = 'ログイン済み';
+          loginBtn.disabled = true;
+        }
+      }
+    } else {
+      currentUid = null;
+      signInAnonymously(auth).catch(function (e) {
+        console.warn('[RT] 匿名ログインに失敗しました', e);
+      });
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const loginBtn = document.getElementById('google-login-btn');
+    if (loginBtn) {
+      loginBtn.addEventListener('click', function () {
+        window.RT.signInWithGoogle();
+      });
+    }
+  });
+  if (document.readyState !== 'loading') {
+    const loginBtnNow = document.getElementById('google-login-btn');
+    if (loginBtnNow && !loginBtnNow.dataset.bound) {
+      loginBtnNow.dataset.bound = '1';
+      loginBtnNow.addEventListener('click', function () {
+        window.RT.signInWithGoogle();
+      });
+    }
+  }
+</script>
+<!-- ▲▲ Firebaseここまで ▲▲ -->
+
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
