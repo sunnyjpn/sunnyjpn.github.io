@@ -839,9 +839,6 @@
   <div id="box" class="box-intro" role="button" aria-label="Reaction Time Test">
     <div id="share-bar">
       <button id="install-btn" class="share-btn" type="button" style="display:none;">ホーム画面に追加</button>
-      <button id="share-native" class="share-btn" type="button" style="display:none;">共有</button>
-      <button id="share-x" class="share-btn" type="button">Xで共有</button>
-      <button id="google-login-btn" class="share-btn" type="button">Googleでログイン</button>
     </div>
 
     <div id="content">
@@ -1445,12 +1442,14 @@
     }
   }
 
-  shareX.addEventListener('click', function (event) {
-    event.stopPropagation();
-    openXShare();
-  });
+  if (shareX) {
+    shareX.addEventListener('click', function (event) {
+      event.stopPropagation();
+      openXShare();
+    });
+  }
 
-  if (navigator.share) {
+  if (navigator.share && shareNative) {
     shareNative.style.display = '';
     shareNative.addEventListener('click', function (event) {
       event.stopPropagation();
