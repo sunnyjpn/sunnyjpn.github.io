@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reaction-time-test-cache-v5';
+const CACHE_NAME = 'reaction-time-test-cache-v6';
 const APP_SHELL = [
   './',
   './index.html',

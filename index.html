@@ -658,8 +658,10 @@
     top: calc(var(--share-top) + 46px);
     right: 14px;
     z-index: 6;
-    width: 260px;
+    width: 290px;
     max-width: calc(100vw - 28px);
+    max-height: min(76vh, 560px);
+    overflow-y: auto;
     background: #17171b;
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 16px;
@@ -757,6 +759,213 @@
 
   #account-google-btn:hover,
   #account-logout-btn:hover { background: rgba(255,255,255,0.08); }
+
+  /* ▼▼ フレンド機能 ▼▼ */
+  .account-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 3px;
+  }
+
+  .account-tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .account-tab-btn.active {
+    background: #2B87D1;
+    color: #fff;
+  }
+
+  .friend-hint-text {
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.6;
+    margin: 0 0 12px;
+  }
+
+  #friend-google-btn {
+    width: 100%;
+    background: #2B87D1;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    padding: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  #friend-google-btn:hover { background: #3a95de; }
+
+  .friend-block { margin-bottom: 16px; }
+  .friend-block:last-child { margin-bottom: 0; }
+
+  .friend-section-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+  }
+
+  .friend-id-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  #friend-my-code {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.03em;
+    font-family: "SFMono-Regular", Consolas, monospace;
+  }
+
+  #friend-copy-code-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: #fff;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11.5px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  #friend-copy-code-btn:hover { background: rgba(255,255,255,0.18); }
+
+  .friend-add-row {
+    display: flex;
+    gap: 6px;
+  }
+
+  #friend-add-input {
+    flex: 1;
+    min-width: 0;
+    background: #232328;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: #fff;
+    font-size: 13px;
+    text-transform: uppercase;
+  }
+
+  #friend-add-btn {
+    flex-shrink: 0;
+    background: #2B87D1;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  #friend-add-btn:hover { background: #3a95de; }
+  #friend-add-btn:disabled { opacity: 0.6; cursor: default; }
+
+  .friend-status-text {
+    font-size: 11.5px;
+    margin-top: 6px;
+    min-height: 14px;
+    color: rgba(255,255,255,0.55);
+  }
+
+  .friend-status-text.is-error { color: #ff8080; }
+  .friend-status-text.is-success { color: #6bd48a; }
+
+  .friend-empty {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    padding: 6px 2px;
+  }
+
+  .friend-request-row,
+  .friend-list-row,
+  .friend-rank-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+  }
+
+  .friend-request-row:last-child,
+  .friend-list-row:last-child,
+  .friend-rank-row:last-child { margin-bottom: 0; }
+
+  .friend-avatar {
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .friend-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .friend-sub {
+    font-size: 10.5px;
+    color: rgba(255,255,255,0.45);
+  }
+
+  .friend-score {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #6bd0ff;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .friend-rank-medal {
+    font-size: 15px;
+    width: 22px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .friend-req-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .friend-req-accept { background: #2B87D1; color: #fff; }
+  .friend-req-accept:hover { background: #3a95de; }
+  .friend-req-decline { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+  .friend-req-decline:hover { background: rgba(255,255,255,0.18); }
+  /* ▲▲ フレンド機能ここまで ▲▲ */
   /* ▲▲ アカウントアイコン／パネルここまで ▲▲ */
 
   #box::before {
@@ -988,29 +1197,77 @@
     </button>
 
     <div id="account-panel">
-      <div class="account-status" id="account-status-text">読み込み中…</div>
-
-      <div class="account-stats">
-        <div class="account-stat">
-          <div class="account-stat-label">ベスト</div>
-          <div class="account-stat-value" id="account-stat-best">–</div>
-        </div>
-        <div class="account-stat">
-          <div class="account-stat-label">平均</div>
-          <div class="account-stat-value" id="account-stat-avg">–</div>
-        </div>
-        <div class="account-stat">
-          <div class="account-stat-label">回数</div>
-          <div class="account-stat-value" id="account-stat-games">–</div>
-        </div>
+      <div class="account-tabs">
+        <button type="button" class="account-tab-btn active" data-tab="profile">プロフィール</button>
+        <button type="button" class="account-tab-btn" data-tab="friends">フレンド</button>
       </div>
 
-      <label for="nickname-input">ニックネーム</label>
-      <input id="nickname-input" type="text" maxlength="16" placeholder="未設定">
-      <button id="nickname-save-btn" type="button">保存</button>
+      <div class="account-tab-panel" data-tab-panel="profile">
+        <div class="account-status" id="account-status-text">読み込み中…</div>
 
-      <button id="account-google-btn" type="button" style="display:none;">Googleでログイン</button>
-      <button id="account-logout-btn" type="button" style="display:none;">ログアウト</button>
+        <div class="account-stats">
+          <div class="account-stat">
+            <div class="account-stat-label">ベスト</div>
+            <div class="account-stat-value" id="account-stat-best">–</div>
+          </div>
+          <div class="account-stat">
+            <div class="account-stat-label">平均</div>
+            <div class="account-stat-value" id="account-stat-avg">–</div>
+          </div>
+          <div class="account-stat">
+            <div class="account-stat-label">回数</div>
+            <div class="account-stat-value" id="account-stat-games">–</div>
+          </div>
+        </div>
+
+        <label for="nickname-input">ニックネーム</label>
+        <input id="nickname-input" type="text" maxlength="16" placeholder="未設定">
+        <button id="nickname-save-btn" type="button">保存</button>
+
+        <button id="account-google-btn" type="button" style="display:none;">Googleでログイン</button>
+        <button id="account-logout-btn" type="button" style="display:none;">ログアウト</button>
+      </div>
+
+      <div class="account-tab-panel" data-tab-panel="friends" style="display:none;">
+        <div id="friend-login-required">
+          <p class="friend-hint-text">フレンド機能を使うにはGoogleログインが必要です。</p>
+          <button id="friend-google-btn" type="button">Googleでログイン</button>
+        </div>
+
+        <div id="friend-main">
+          <div class="friend-block">
+            <div class="friend-section-title">あなたのID</div>
+            <div class="friend-id-row">
+              <span id="friend-my-code">–</span>
+              <button type="button" id="friend-copy-code-btn">コピー</button>
+            </div>
+          </div>
+
+          <div class="friend-block">
+            <div class="friend-section-title">＋ フレンド追加</div>
+            <div class="friend-add-row">
+              <input id="friend-add-input" type="text" placeholder="SUN-XXXXXX" maxlength="12" autocapitalize="characters">
+              <button type="button" id="friend-add-btn">追加</button>
+            </div>
+            <div id="friend-add-status" class="friend-status-text"></div>
+          </div>
+
+          <div class="friend-block" id="friend-requests-block" style="display:none;">
+            <div class="friend-section-title">フレンドリクエスト</div>
+            <div id="friend-requests-list"></div>
+          </div>
+
+          <div class="friend-block">
+            <div class="friend-section-title">🏆 フレンドランキング</div>
+            <div id="friend-ranking-list"><div class="friend-empty">まだフレンドがいません</div></div>
+          </div>
+
+          <div class="friend-block">
+            <div class="friend-section-title">フレンド <span id="friend-count">0</span></div>
+            <div id="friend-list"><div class="friend-empty">まだフレンドがいません</div></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="content">
@@ -1161,8 +1418,10 @@
   const COLOR_GO = '#4BDB6A';
   const goSound = new Audio('go-sound.mp3');
   goSound.preload = 'auto';
+  goSound.volume = 1.0; // この効果音のみ最大音量で再生する（音源自体も音量を上げ済み）
   const resultSound = new Audio('result-sound.mp3');
   resultSound.preload = 'auto';
+  resultSound.volume = 0.85;
   const COLOR_RESULT = '#2B87D1';
   const COLOR_TOOSOON = '#2B87D1';
 
@@ -1632,6 +1891,35 @@
     } catch (e) {}
   }
 
+  let audioPrimed = false;
+
+  // 初回タップ（ユーザー操作）のタイミングで無音に近い状態で一度再生しておくことで、
+  // ブラウザ側のデコード準備を済ませ、実際の「Go!」再生時の遅延を減らす
+  function primeAudioOnce() {
+    if (audioPrimed) return;
+    audioPrimed = true;
+    [goSound, resultSound].forEach(function (audio) {
+      try {
+        const originalVolume = audio.volume;
+        audio.volume = 0;
+        const p = audio.play();
+        if (p && typeof p.then === 'function') {
+          p.then(function () {
+            audio.pause();
+            audio.currentTime = 0;
+            audio.volume = originalVolume;
+          }).catch(function () {
+            audio.volume = originalVolume;
+          });
+        } else {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.volume = originalVolume;
+        }
+      } catch (e) {}
+    });
+  }
+
   function onGameTap(event) {
     // アカウントパネルや共有バーなど、ゲーム以外のUI操作はゲーム側に奪わない
     if (event && event.target && event.target.closest) {
@@ -1640,6 +1928,8 @@
     }
 
     if (event) event.preventDefault();
+
+    primeAudioOnce();
 
     // 結果集計中（Retrieving data...表示中）はタップを無視する
     if (state === 'retrieving') return;
@@ -1907,6 +2197,10 @@
     doc,
     getDoc,
     setDoc,
+    deleteDoc,
+    collection,
+    getDocs,
+    runTransaction,
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
   import { getAnalytics, isSupported as analyticsIsSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
@@ -2202,6 +2496,421 @@
     }
   }
 
+  // ▼▼ フレンド機能 ▼▼
+  const FRIEND_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 紛らわしい文字(0,O,1,I)を除外
+  let friendsUiLoaded = false;
+
+  function generateCandidateFriendCode() {
+    let s = '';
+    for (let i = 0; i < 6; i++) {
+      s += FRIEND_CODE_CHARS.charAt(Math.floor(Math.random() * FRIEND_CODE_CHARS.length));
+    }
+    return 'SUN-' + s;
+  }
+
+  function normalizeFriendCodeInput(raw) {
+    return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+  }
+
+  // 未発行なら、衝突しないユニークなフレンドIDを新規発行する
+  async function ensureFriendCode(uid) {
+    try {
+      const userRef = doc(db, 'users', uid);
+      const snap = await getDoc(userRef);
+      if (snap.exists() && typeof snap.data().friendCode === 'string' && snap.data().friendCode) {
+        return snap.data().friendCode;
+      }
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const code = generateCandidateFriendCode();
+        const codeRef = doc(db, 'friendCodes', code);
+        try {
+          const assigned = await runTransaction(db, async function (tx) {
+            const codeSnap = await tx.get(codeRef);
+            if (codeSnap.exists()) return false;
+            tx.set(codeRef, { uid: uid, createdAt: serverTimestamp() });
+            tx.set(userRef, { friendCode: code, updatedAt: serverTimestamp() }, { merge: true });
+            return true;
+          });
+          if (assigned) return code;
+        } catch (e) {
+          console.warn('[RT] フレンドID発行の再試行', e);
+        }
+      }
+    } catch (e) {
+      console.warn('[RT] フレンドIDの発行に失敗しました', e);
+    }
+    return null;
+  }
+
+  async function findUidByFriendCode(code) {
+    try {
+      const snap = await getDoc(doc(db, 'friendCodes', code));
+      if (!snap.exists()) return null;
+      return snap.data().uid || null;
+    } catch (e) {
+      console.warn('[RT] フレンドID検索に失敗しました', e);
+      return null;
+    }
+  }
+
+  async function isAlreadyFriend(uid, otherUid) {
+    try {
+      const snap = await getDoc(doc(db, 'users', uid, 'friends', otherUid));
+      return snap.exists();
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function sendFriendRequest(toUid) {
+    if (!currentUid || !toUid || toUid === currentUid) return { ok: false, reason: 'invalid' };
+    if (await isAlreadyFriend(currentUid, toUid)) return { ok: false, reason: 'already-friend' };
+
+    try {
+      const myDoc = await getDoc(doc(db, 'users', currentUid));
+      const myData = myDoc.exists() ? myDoc.data() : {};
+      await setDoc(doc(db, 'users', toUid, 'friendRequests', currentUid), {
+        fromUid: currentUid,
+        fromNickname: typeof myData.nickname === 'string' ? myData.nickname : '',
+        fromCode: typeof myData.friendCode === 'string' ? myData.friendCode : '',
+        createdAt: serverTimestamp(),
+        status: 'pending'
+      });
+      return { ok: true };
+    } catch (e) {
+      console.warn('[RT] フレンドリクエストの送信に失敗しました', e);
+      return { ok: false, reason: 'error' };
+    }
+  }
+
+  async function acceptFriendRequest(fromUid) {
+    if (!currentUid || !fromUid) return;
+    try {
+      await setDoc(doc(db, 'users', currentUid, 'friends', fromUid), { since: serverTimestamp() }, { merge: true });
+      await setDoc(doc(db, 'users', fromUid, 'friends', currentUid), { since: serverTimestamp() }, { merge: true });
+      await deleteDoc(doc(db, 'users', currentUid, 'friendRequests', fromUid));
+    } catch (e) {
+      console.warn('[RT] フレンドリクエストの承認に失敗しました', e);
+    }
+  }
+
+  async function declineFriendRequest(fromUid) {
+    if (!currentUid || !fromUid) return;
+    try {
+      await deleteDoc(doc(db, 'users', currentUid, 'friendRequests', fromUid));
+    } catch (e) {
+      console.warn('[RT] フレンドリクエストの削除に失敗しました', e);
+    }
+  }
+
+  function formatMs(ms) {
+    return typeof ms === 'number' ? ms + 'ms' : '–';
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  async function refreshMyFriendCodeUi() {
+    const codeEl = document.getElementById('friend-my-code');
+    if (!codeEl || !currentUid) return;
+    codeEl.textContent = '発行中…';
+    const code = await ensureFriendCode(currentUid);
+    codeEl.textContent = code || '取得に失敗しました';
+  }
+
+  async function refreshFriendRequestsUi() {
+    const block = document.getElementById('friend-requests-block');
+    const listEl = document.getElementById('friend-requests-list');
+    if (!block || !listEl || !currentUid) return;
+    try {
+      const snaps = await getDocs(collection(db, 'users', currentUid, 'friendRequests'));
+      if (snaps.empty) {
+        block.style.display = 'none';
+        listEl.innerHTML = '';
+        return;
+      }
+      block.style.display = 'block';
+      const rows = [];
+      snaps.forEach(function (d) {
+        const data = d.data() || {};
+        const name = data.fromNickname ? escapeHtml(data.fromNickname) : (data.fromCode ? escapeHtml(data.fromCode) : '名無し');
+        rows.push(
+          '<div class="friend-request-row" data-from-uid="' + escapeHtml(d.id) + '">' +
+            '<span class="friend-avatar">👤</span>' +
+            '<span class="friend-name">' + name + '</span>' +
+            '<button type="button" class="friend-req-btn friend-req-accept" data-action="accept">承認</button>' +
+            '<button type="button" class="friend-req-btn friend-req-decline" data-action="decline">拒否</button>' +
+          '</div>'
+        );
+      });
+      listEl.innerHTML = rows.join('');
+    } catch (e) {
+      console.warn('[RT] フレンドリクエストの取得に失敗しました', e);
+    }
+  }
+
+  async function loadFriendsData() {
+    if (!currentUid) return [];
+    try {
+      const snaps = await getDocs(collection(db, 'users', currentUid, 'friends'));
+      const friendUids = [];
+      snaps.forEach(function (d) { friendUids.push(d.id); });
+
+      const friends = [];
+      for (let i = 0; i < friendUids.length; i++) {
+        const fUid = friendUids[i];
+        try {
+          const uSnap = await getDoc(doc(db, 'users', fUid));
+          if (uSnap.exists()) {
+            const data = uSnap.data();
+            friends.push({
+              uid: fUid,
+              nickname: (typeof data.nickname === 'string' && data.nickname) ? data.nickname : '名無し',
+              bestScore: typeof data.bestScore === 'number' ? data.bestScore : null,
+              attemptCount: typeof data.attemptCount === 'number' ? data.attemptCount : 0,
+              totalTimeSum: typeof data.totalTimeSum === 'number' ? data.totalTimeSum : 0
+            });
+          }
+        } catch (e) {}
+      }
+      return friends;
+    } catch (e) {
+      console.warn('[RT] フレンド一覧の取得に失敗しました', e);
+      return [];
+    }
+  }
+
+  function renderFriendList(friends) {
+    const listEl = document.getElementById('friend-list');
+    const countEl = document.getElementById('friend-count');
+    if (!listEl) return;
+    if (countEl) countEl.textContent = String(friends.length);
+
+    if (!friends.length) {
+      listEl.innerHTML = '<div class="friend-empty">まだフレンドがいません</div>';
+      return;
+    }
+
+    listEl.innerHTML = friends.map(function (f) {
+      const avg = f.attemptCount > 0 ? Math.round(f.totalTimeSum / f.attemptCount) + 'ms' : '–';
+      return (
+        '<div class="friend-list-row">' +
+          '<span class="friend-avatar">👤</span>' +
+          '<span class="friend-name">' + escapeHtml(f.nickname) + '<br><span class="friend-sub">平均 ' + avg + ' / ' + f.attemptCount + '回</span></span>' +
+          '<span class="friend-score">' + formatMs(f.bestScore) + '</span>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function renderFriendRanking(friends, self) {
+    const listEl = document.getElementById('friend-ranking-list');
+    if (!listEl) return;
+
+    const entries = friends.map(function (f) {
+      return { nickname: f.nickname, bestScore: f.bestScore, isSelf: false };
+    });
+    if (self) entries.push({ nickname: (self.nickname || 'あなた') + '（あなた）', bestScore: self.bestScore, isSelf: true });
+
+    entries.sort(function (a, b) {
+      if (a.bestScore === null && b.bestScore === null) return 0;
+      if (a.bestScore === null) return 1;
+      if (b.bestScore === null) return -1;
+      return a.bestScore - b.bestScore;
+    });
+
+    if (!entries.length) {
+      listEl.innerHTML = '<div class="friend-empty">まだフレンドがいません</div>';
+      return;
+    }
+
+    const medals = ['🥇', '🥈', '🥉'];
+    listEl.innerHTML = entries.map(function (e, i) {
+      const medal = medals[i] || (i + 1) + '.';
+      return (
+        '<div class="friend-rank-row"' + (e.isSelf ? ' style="background:rgba(43,135,209,0.18);"' : '') + '>' +
+          '<span class="friend-rank-medal">' + medal + '</span>' +
+          '<span class="friend-name">' + escapeHtml(e.nickname) + '</span>' +
+          '<span class="friend-score">' + formatMs(e.bestScore) + '</span>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  async function refreshFriendListAndRanking() {
+    if (!currentUid) return;
+    const friends = await loadFriendsData();
+    renderFriendList(friends);
+
+    let selfData = null;
+    try {
+      const selfSnap = await getDoc(doc(db, 'users', currentUid));
+      if (selfSnap.exists()) {
+        const d = selfSnap.data();
+        selfData = {
+          nickname: (typeof d.nickname === 'string' && d.nickname) ? d.nickname : 'あなた',
+          bestScore: typeof d.bestScore === 'number' ? d.bestScore : null
+        };
+      }
+    } catch (e) {}
+    renderFriendRanking(friends, selfData);
+  }
+
+  async function refreshFriendsUi() {
+    const loginRequired = document.getElementById('friend-login-required');
+    const main = document.getElementById('friend-main');
+    if (!loginRequired || !main) return;
+
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) {
+      loginRequired.style.display = 'block';
+      main.style.display = 'none';
+      return;
+    }
+    loginRequired.style.display = 'none';
+    main.style.display = 'block';
+
+    await refreshMyFriendCodeUi();
+    await refreshFriendRequestsUi();
+    await refreshFriendListAndRanking();
+  }
+
+  async function handleFriendAdd() {
+    const input = document.getElementById('friend-add-input');
+    const btn = document.getElementById('friend-add-btn');
+    const statusEl = document.getElementById('friend-add-status');
+    if (!input || !statusEl) return;
+
+    const code = normalizeFriendCodeInput(input.value);
+    statusEl.className = 'friend-status-text';
+    if (!code) {
+      statusEl.textContent = 'IDを入力してください';
+      statusEl.classList.add('is-error');
+      return;
+    }
+    if (!currentUid || !auth.currentUser || auth.currentUser.isAnonymous) {
+      statusEl.textContent = 'ログインが必要です';
+      statusEl.classList.add('is-error');
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = '追加中…'; }
+    statusEl.textContent = '検索中…';
+
+    try {
+      const toUid = await findUidByFriendCode(code);
+      if (!toUid) {
+        statusEl.textContent = 'そのIDのユーザーが見つかりません';
+        statusEl.classList.add('is-error');
+        return;
+      }
+      if (toUid === currentUid) {
+        statusEl.textContent = '自分のIDです';
+        statusEl.classList.add('is-error');
+        return;
+      }
+      if (await isAlreadyFriend(currentUid, toUid)) {
+        statusEl.textContent = 'すでにフレンドです';
+        statusEl.classList.add('is-error');
+        return;
+      }
+      const result = await sendFriendRequest(toUid);
+      if (result.ok) {
+        statusEl.textContent = 'フレンドリクエストを送信しました';
+        statusEl.classList.add('is-success');
+        input.value = '';
+      } else {
+        statusEl.textContent = 'リクエストの送信に失敗しました';
+        statusEl.classList.add('is-error');
+      }
+    } catch (e) {
+      console.warn('[RT] フレンド追加処理に失敗しました', e);
+      statusEl.textContent = 'エラーが発生しました';
+      statusEl.classList.add('is-error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '追加'; }
+    }
+  }
+
+  function bindFriendControls() {
+    const copyBtn = document.getElementById('friend-copy-code-btn');
+    if (copyBtn && !copyBtn.dataset.bound) {
+      copyBtn.dataset.bound = '1';
+      copyBtn.addEventListener('click', function () {
+        const codeEl = document.getElementById('friend-my-code');
+        const code = codeEl ? codeEl.textContent : '';
+        if (!code || code === '–') return;
+        const done = function () {
+          const original = copyBtn.textContent;
+          copyBtn.textContent = 'コピーしました';
+          setTimeout(function () { copyBtn.textContent = original; }, 1400);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(done).catch(function () {});
+        }
+      });
+    }
+
+    const addBtn = document.getElementById('friend-add-btn');
+    if (addBtn && !addBtn.dataset.bound) {
+      addBtn.dataset.bound = '1';
+      addBtn.addEventListener('click', function () { handleFriendAdd(); });
+    }
+
+    const addInput = document.getElementById('friend-add-input');
+    if (addInput && !addInput.dataset.bound) {
+      addInput.dataset.bound = '1';
+      addInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') handleFriendAdd();
+      });
+    }
+
+    const requestsList = document.getElementById('friend-requests-list');
+    if (requestsList && !requestsList.dataset.bound) {
+      requestsList.dataset.bound = '1';
+      requestsList.addEventListener('click', async function (e) {
+        const btn = e.target.closest('.friend-req-btn');
+        if (!btn) return;
+        const row = e.target.closest('.friend-request-row');
+        const fromUid = row ? row.getAttribute('data-from-uid') : null;
+        if (!fromUid) return;
+        btn.disabled = true;
+        if (btn.dataset.action === 'accept') {
+          await acceptFriendRequest(fromUid);
+        } else {
+          await declineFriendRequest(fromUid);
+        }
+        refreshFriendRequestsUi();
+        refreshFriendListAndRanking();
+      });
+    }
+
+    const friendGoogleBtn = document.getElementById('friend-google-btn');
+    if (friendGoogleBtn && !friendGoogleBtn.dataset.bound) {
+      friendGoogleBtn.dataset.bound = '1';
+      friendGoogleBtn.addEventListener('click', function () { window.RT.signInWithGoogle(); });
+    }
+
+    document.querySelectorAll('.account-tab-btn').forEach(function (tabBtn) {
+      if (tabBtn.dataset.bound) return;
+      tabBtn.dataset.bound = '1';
+      tabBtn.addEventListener('click', function () {
+        const target = tabBtn.getAttribute('data-tab');
+        document.querySelectorAll('.account-tab-btn').forEach(function (b) { b.classList.toggle('active', b === tabBtn); });
+        document.querySelectorAll('.account-tab-panel').forEach(function (p) {
+          p.style.display = (p.getAttribute('data-tab-panel') === target) ? 'block' : 'none';
+        });
+        if (target === 'friends') {
+          refreshFriendsUi();
+        }
+      });
+    });
+  }
+  // ▲▲ フレンド機能ここまで ▲▲
+
   // signin.html から送信されたメールリンクでの戻りを検知し、ログインを完了させる
   async function completeEmailLinkSignInIfNeeded() {
     if (!isSignInWithEmailLink(auth, window.location.href)) return;
@@ -2242,9 +2951,16 @@
         console.warn('[RT] 匿名ログインに失敗しました', e);
       });
     }
+
+    const friendsTabPanel = document.querySelector('.account-tab-panel[data-tab-panel="friends"]');
+    if (friendsTabPanel && friendsTabPanel.style.display !== 'none') {
+      refreshFriendsUi();
+    }
   });
 
   function bindAccountControls() {
+    bindFriendControls();
+
     const loginBtn = document.getElementById('google-login-btn');
     if (loginBtn && !loginBtn.dataset.bound) {
       loginBtn.dataset.bound = '1';
