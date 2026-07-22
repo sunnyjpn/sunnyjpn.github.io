@@ -989,6 +989,10 @@
   const COLOR_IDLE = '#2B87D1';
   const COLOR_WAIT = '#CE2636';
   const COLOR_GO = '#4BDB6A';
+  const goSound = new Audio('go-sound.mp3');
+  goSound.preload = 'auto';
+  const resultSound = new Audio('result-sound.mp3');
+  resultSound.preload = 'auto';
   const COLOR_RESULT = '#2B87D1';
   const COLOR_TOOSOON = '#2B87D1';
 
@@ -1320,6 +1324,10 @@
     startTime = performance.now();
     markRoundReady();
     vibrateFeedback(40);
+    try {
+      goSound.currentTime = 0;
+      goSound.play().catch(function () {});
+    } catch (e) {}
   }
 
   function setTooSoonScreen() {
@@ -1358,6 +1366,15 @@
     }
 
     vibrateFeedback(accepted && isNewBest ? [30, 40, 30] : 25);
+
+    if (accepted) {
+      setTimeout(function () {
+        try {
+          resultSound.currentTime = 0;
+          resultSound.play().catch(function () {});
+        } catch (e) {}
+      }, 180);
+    }
 
     box.style.backgroundColor = COLOR_RESULT;
     idleTitle.style.display = 'none';
