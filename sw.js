@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reaction-time-test-cache-v4';
+const CACHE_NAME = 'reaction-time-test-cache-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -77,6 +77,10 @@ self.addEventListener('sync', function (event) {
 });
 
 self.addEventListener('message', function (event) {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
   if (!event.data || event.data.type !== 'RT_REQUEST_SYNC') return;
   event.waitUntil(notifyClients('RT_FLUSH_SYNC'));
 });
