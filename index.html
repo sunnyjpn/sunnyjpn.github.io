@@ -153,9 +153,9 @@
     --box-padding: 24px;
     --content-max-width: 760px;
     --share-top: max(14px, env(safe-area-inset-top));
-    --share-right: 14px;
-    --share-left: auto;
-    --share-justify: flex-end;
+    --share-right: auto;
+    --share-left: 14px;
+    --share-justify: flex-start;
     --share-gap: 10px;
     --share-width: auto;
     --stats-bottom: max(20px, env(safe-area-inset-bottom));
@@ -385,7 +385,7 @@
     right: 12px;
     width: auto;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   body.device-mobile .share-btn {
@@ -617,6 +617,140 @@
   /* ▼▼ 追加演出（Ripple／マウス追従ライト／ベスト更新／パルス／背景グラデーション） ▼▼ */
   #content { position: relative; z-index: 1; }
 
+  /* ▼▼ アカウントアイコン／パネル ▼▼ */
+  #account-toggle-btn {
+    position: absolute;
+    top: var(--share-top);
+    right: 14px;
+    z-index: 5;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: transform 0.15s ease, background-color 0.15s ease;
+  }
+
+  #account-toggle-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,0.2);
+  }
+
+  #account-panel {
+    position: absolute;
+    top: calc(var(--share-top) + 46px);
+    right: 14px;
+    z-index: 6;
+    width: 260px;
+    max-width: calc(100vw - 28px);
+    background: #17171b;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  #account-panel.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  #account-panel .account-status {
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 14px;
+  }
+
+  #account-panel .account-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  #account-panel .account-stat {
+    flex: 1;
+    text-align: center;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 8px 4px;
+  }
+
+  #account-panel .account-stat-label {
+    font-size: 10.5px;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 2px;
+  }
+
+  #account-panel .account-stat-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  #account-panel label {
+    display: block;
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 6px;
+  }
+
+  #nickname-input {
+    width: 100%;
+    background: #232328;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: #fff;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  #nickname-save-btn {
+    width: 100%;
+    background: #2B87D1;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 14px;
+  }
+
+  #nickname-save-btn:hover { background: #3a95de; }
+
+  #account-google-btn,
+  #account-logout-btn {
+    width: 100%;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.85);
+    border-radius: 8px;
+    padding: 9px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  #account-google-btn:hover,
+  #account-logout-btn:hover { background: rgba(255,255,255,0.08); }
+  /* ▲▲ アカウントアイコン／パネルここまで ▲▲ */
+
   #box::before {
     content: "";
     position: absolute;
@@ -839,6 +973,36 @@
   <div id="box" class="box-intro" role="button" aria-label="Reaction Time Test">
     <div id="share-bar">
       <button id="install-btn" class="share-btn" type="button" style="display:none;">ホーム画面に追加</button>
+    </div>
+
+    <button id="account-toggle-btn" type="button" aria-label="アカウント">
+      <span id="account-toggle-label">?</span>
+    </button>
+
+    <div id="account-panel">
+      <div class="account-status" id="account-status-text">読み込み中…</div>
+
+      <div class="account-stats">
+        <div class="account-stat">
+          <div class="account-stat-label">ベスト</div>
+          <div class="account-stat-value" id="account-stat-best">–</div>
+        </div>
+        <div class="account-stat">
+          <div class="account-stat-label">平均</div>
+          <div class="account-stat-value" id="account-stat-avg">–</div>
+        </div>
+        <div class="account-stat">
+          <div class="account-stat-label">回数</div>
+          <div class="account-stat-value" id="account-stat-games">–</div>
+        </div>
+      </div>
+
+      <label for="nickname-input">ニックネーム</label>
+      <input id="nickname-input" type="text" maxlength="16" placeholder="未設定">
+      <button id="nickname-save-btn" type="button">保存</button>
+
+      <button id="account-google-btn" type="button" style="display:none;">Googleでログイン</button>
+      <button id="account-logout-btn" type="button" style="display:none;">ログアウト</button>
     </div>
 
     <div id="content">
@@ -1258,6 +1422,13 @@
     bestVal.textContent = bestScore === null ? '–' : bestScore + ' ms';
     worldVal.textContent = WORLD_AVERAGE + ' ms';
     avgVal.textContent = attemptCount === 0 ? '–' : Math.round(totalTimeSum / attemptCount) + ' ms';
+
+    const accBest = document.getElementById('account-stat-best');
+    const accAvg = document.getElementById('account-stat-avg');
+    const accGames = document.getElementById('account-stat-games');
+    if (accBest) accBest.textContent = bestScore === null ? '–' : bestScore + 'ms';
+    if (accAvg) accAvg.textContent = attemptCount === 0 ? '–' : Math.round(totalTimeSum / attemptCount) + 'ms';
+    if (accGames) accGames.textContent = attemptCount === 0 ? '–' : String(attemptCount);
   }
 
   // Firebase側から呼ばれる：クラウドの記録をローカル状態へ反映する
@@ -1923,11 +2094,22 @@
     const footerUser = document.getElementById('account-footer-inner') ? document.getElementById('account-footer-user') : null;
     const logoutBtn = document.getElementById('logout-btn');
 
+    const toggleLabel = document.getElementById('account-toggle-label');
+    const statusText = document.getElementById('account-status-text');
+    const accGoogleBtn = document.getElementById('account-google-btn');
+    const accLogoutBtn = document.getElementById('account-logout-btn');
+
     if (user && !user.isAnonymous) {
       if (loginBtn) { loginBtn.textContent = 'ログイン済み'; loginBtn.disabled = true; }
       if (splash) splash.classList.remove('show');
       if (footerUser) footerUser.textContent = (user.displayName || user.email || 'ログイン中') + ' としてログイン中';
       if (logoutBtn) logoutBtn.style.display = 'inline-block';
+
+      const label = (user.displayName || user.email || 'U').trim().charAt(0).toUpperCase();
+      if (toggleLabel) toggleLabel.textContent = label || 'U';
+      if (statusText) statusText.textContent = 'Googleでログイン中：' + (user.displayName || user.email || '');
+      if (accGoogleBtn) accGoogleBtn.style.display = 'none';
+      if (accLogoutBtn) accLogoutBtn.style.display = 'block';
     } else {
       if (loginBtn) { loginBtn.textContent = 'Googleでログイン'; loginBtn.disabled = false; }
       if (footerUser) footerUser.textContent = '';
@@ -1936,6 +2118,43 @@
         // 匿名ログインの確立後にオーバーレイを表示
         requestAnimationFrame(function () { splash.classList.add('show'); });
       }
+
+      if (toggleLabel) toggleLabel.textContent = '?';
+      if (statusText) statusText.textContent = '匿名でプレイ中（この端末のみ記録）';
+      if (accGoogleBtn) accGoogleBtn.style.display = 'block';
+      if (accLogoutBtn) accLogoutBtn.style.display = 'none';
+    }
+  }
+
+  async function loadNicknameUi(uid) {
+    const input = document.getElementById('nickname-input');
+    if (!input || !uid) return;
+    try {
+      const snap = await getDoc(doc(db, 'users', uid));
+      if (snap.exists() && typeof snap.data().nickname === 'string') {
+        input.value = snap.data().nickname;
+      }
+    } catch (e) {
+      console.warn('[RT] ニックネームの取得に失敗しました', e);
+    }
+  }
+
+  async function saveNickname() {
+    const input = document.getElementById('nickname-input');
+    const saveBtn = document.getElementById('nickname-save-btn');
+    if (!input || !currentUid) return;
+    const nickname = input.value.trim().slice(0, 16);
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中…'; }
+    try {
+      await setDoc(doc(db, 'users', currentUid), { nickname: nickname, updatedAt: serverTimestamp() }, { merge: true });
+      if (saveBtn) saveBtn.textContent = '保存しました';
+    } catch (e) {
+      console.warn('[RT] ニックネームの保存に失敗しました', e);
+      if (saveBtn) saveBtn.textContent = '保存に失敗';
+    } finally {
+      setTimeout(function () {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; }
+      }, 1400);
     }
   }
 
@@ -1968,6 +2187,7 @@
       currentUid = user.uid;
       pullAndMerge(user.uid);
       updateAccountUi(user);
+      loadNicknameUi(user.uid);
       if (!user.isAnonymous) {
         window.localStorage.setItem('sunnySignedIn', '1');
       }
@@ -2009,6 +2229,45 @@
     if (logoutBtn && !logoutBtn.dataset.bound) {
       logoutBtn.dataset.bound = '1';
       logoutBtn.addEventListener('click', async function () {
+        try {
+          window.localStorage.removeItem('sunnySignedIn');
+          await signOut(auth);
+        } catch (e) {
+          console.warn('[RT] ログアウトに失敗しました', e);
+        }
+      });
+    }
+
+    const toggleBtn = document.getElementById('account-toggle-btn');
+    const panel = document.getElementById('account-panel');
+    if (toggleBtn && panel && !toggleBtn.dataset.bound) {
+      toggleBtn.dataset.bound = '1';
+      toggleBtn.addEventListener('click', function (event) {
+        event.stopPropagation();
+        panel.classList.toggle('open');
+      });
+      panel.addEventListener('click', function (event) { event.stopPropagation(); });
+      document.addEventListener('click', function () {
+        panel.classList.remove('open');
+      });
+    }
+
+    const nicknameSaveBtn = document.getElementById('nickname-save-btn');
+    if (nicknameSaveBtn && !nicknameSaveBtn.dataset.bound) {
+      nicknameSaveBtn.dataset.bound = '1';
+      nicknameSaveBtn.addEventListener('click', function () { saveNickname(); });
+    }
+
+    const accGoogleBtn = document.getElementById('account-google-btn');
+    if (accGoogleBtn && !accGoogleBtn.dataset.bound) {
+      accGoogleBtn.dataset.bound = '1';
+      accGoogleBtn.addEventListener('click', function () { window.RT.signInWithGoogle(); });
+    }
+
+    const accLogoutBtn = document.getElementById('account-logout-btn');
+    if (accLogoutBtn && !accLogoutBtn.dataset.bound) {
+      accLogoutBtn.dataset.bound = '1';
+      accLogoutBtn.addEventListener('click', async function () {
         try {
           window.localStorage.removeItem('sunnySignedIn');
           await signOut(auth);
