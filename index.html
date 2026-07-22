@@ -1,3081 +1,565 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="google" content="notranslate">
-<meta name="google-site-verification" content="2LcM6p26drIHs5ExNlWPkK-7-iWjDLfdfwgiQJIiaEc">
-
-<!-- ▼▼ CSP（Content Security Policy） ▼▼
-     GitHub PagesはカスタムHTTPヘッダーを設定できないため、metaタグでの指定になる
-     （metaタグではframe-ancestors / report-uri / sandbox は無効。より厳密に運用したい場合は
-     Cloudflare Pages・Netlify等、レスポンスヘッダーを設定できるホスティングへの移行を検討のこと）。
-     このサイトはFirebase（Auth/Firestore/Functions/App Check）・Google AdSense・
-     Firebase Analytics・Cloudflare Beaconを利用しているため、それらに必要なドメインのみ許可している。
-     注意：既存のインラインscript（type="module"含む）を動かすため script-src に 'unsafe-inline' を
-     含めている。これがある限りCSPは「インラインスクリプト注入」自体は防げない
-     （防ぐにはインラインscriptを外部.jsファイル化し、nonceまたはhashへ置き換える必要がある）。
-     現状のCSPは主に「許可していない外部ドメインからのスクリプト読み込み・fetch・埋め込み」を防止する目的。 -->
-<meta http-equiv="Content-Security-Policy" content="
-  default-src 'self';
-  script-src 'self' 'unsafe-inline' https://www.gstatic.com https://pagead2.googlesyndication.com https://static.cloudflareinsights.com https://www.googletagmanager.com;
-  style-src 'self' 'unsafe-inline';
-  img-src 'self' data: https:;
-  font-src 'self' data:;
-  connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://www.google-analytics.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://static.cloudflareinsights.com https://www.google.com;
-  frame-src https://www.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://pagead2.googlesyndication.com;
-  object-src 'none';
-  base-uri 'self';
-  form-action 'self';
-">
-<!-- ▲▲ CSPここまで ▲▲ -->
-
-<!-- ▼▼ 未ログイン時のみ自動的にサインインページへ移動 ▼▼ -->
-<script>
-  (function () {
-    if (/\/signin(\.html)?\/?$/.test(window.location.pathname)) return;
-    // 既にログイン済みならリダイレクトしない（そのままログイン状態を継続）
-    if (window.localStorage.getItem('sunnySignedIn') === '1') return;
-    // メールのサインインリンクで戻ってきた場合もリダイレクトしない（ログイン処理を継続させる）
-    if (/[?&](mode=signIn|oobCode=|apiKey=)/.test(window.location.search)) return;
-    window.location.replace('./signin.html');
-  })();
-</script>
-<!-- ▲▲ 自動リダイレクトここまで ▲▲ -->
-
-<!-- ▼▼ SEO: サイトを公開するドメインに合わせて以下のURLを置き換えてください ▼▼ -->
-<title>反応速度テスト（Reaction Time Test）| 無料で今すぐリアクションタイム測定</title>
-<meta name="description" content="反応速度テスト（Reaction Time Test）は、緑色に変わった瞬間にタップするだけで自分の反応速度（リアクションタイム）を無料で測定できるWebアプリです。ハイスコアや平均反応時間を記録し、友達と結果をシェアして競い合えます。">
-<meta name="keywords" content="反応速度テスト,リアクションタイム測定,反応速度 測定,Reaction Time Test,反応速度 診断,瞬発力テスト">
-<link rel="canonical" href="https://sunnyjpn.github.io/">
-<meta name="robots" content="index,follow">
-
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="反応速度テスト | Reaction Time Test">
-<meta property="og:title" content="反応速度テスト（Reaction Time Test）| 無料で今すぐリアクションタイム測定">
-<meta property="og:description" content="緑色に変わった瞬間にタップして反応速度を測定。ハイスコア・平均タイムを記録し、結果をシェアできる無料のリアクションタイム測定アプリです。">
-<meta property="og:url" content="https://sunnyjpn.github.io/">
-<meta property="og:image" content="https://sunnyjpn.github.io/og-image.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:locale" content="ja_JP">
-
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="反応速度テスト（Reaction Time Test）| 無料で今すぐリアクションタイム測定">
-<meta name="twitter:description" content="緑色に変わった瞬間にタップして反応速度を測定。ハイスコア・平均タイムを記録し、結果をシェアできる無料のリアクションタイム測定アプリです。">
-<meta name="twitter:image" content="https://sunnyjpn.github.io/og-image.png">
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  "name": "反応速度テスト（Reaction Time Test）",
-  "alternateName": ["リアクションタイム測定", "Reaction Time Test"],
-  "description": "緑色に変わった瞬間にタップして反応速度（リアクションタイム）を測定する無料のWebアプリ。ハイスコアや平均反応時間を記録できます。",
-  "url": "https://sunnyjpn.github.io/",
-  "applicationCategory": "GameApplication",
-  "operatingSystem": "Any",
-  "inLanguage": "ja",
-  "isAccessibleForFree": true,
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "JPY"
-  }
-}
-</script>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "反応速度テストは無料で使えますか？",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "はい、完全無料でご利用いただけます。会員登録やアプリのインストールも不要です。"
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "測定結果はどこに保存されますか？",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "ハイスコアや試行回数などの記録は、お使いのブラウザ内（ローカルストレージ）にのみ保存されます。外部サーバーへの送信は行われません。"
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "スマートフォンでも使えますか？",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "はい、スマートフォン・タブレット・パソコンのいずれのブラウザからもご利用いただけます。ホーム画面に追加すればアプリのように起動することも可能です。"
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "結果が毎回ばらつくのはなぜですか？",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "反応速度は体調や集中力、デバイスの表示遅延などによって変動します。複数回測定し、平均値で比較することをおすすめします。"
-      }
-    }
-  ]
-}
-</script>
-<!-- ▲▲ SEO設定ここまで ▲▲ -->
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c4a273">
-
-<!-- ▼▼ アイコン・ファビコン初期設定（動的生成スクリプトが読み込まれるまでのフォールバック） ▼▼ -->
-<link rel="icon" href="favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<!-- ▲▲ アイコン・ファビコン初期設定ここまで ▲▲ -->
-
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="反応速度テスト">
-<meta name="mobile-web-app-capable" content="yes">
-
-<!-- ▼▼ Google AdSense: ご自身のパブリッシャーIDに置き換えてください（ca-pub-5861952627500956） ▼▼ -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5861952627500956" crossorigin="anonymous"></script>
-<!-- ▲▲ Google AdSenseここまで ▲▲ -->
-
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concierge — Hospitality</title>
 <style>
-  * { box-sizing: border-box; }
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: #0f1a16;
-    scrollbar-width: none;      /* Firefox */
-    -ms-overflow-style: none;   /* IE・Edge */
-  }
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar {
-    display: none;              /* Chrome・Safari */
-  }
-  body {
-    --box-padding: 24px;
-    --content-max-width: 760px;
-    --share-top: max(14px, env(safe-area-inset-top));
-    --share-right: auto;
-    --share-left: 14px;
-    --share-justify: flex-start;
-    --share-gap: 10px;
-    --share-width: auto;
-    --stats-bottom: max(20px, env(safe-area-inset-bottom));
-    --stats-gap: 14px;
-    --stats-card-min-width: 110px;
-    --stats-padding-x: 16px;
-  }
-
-  #box {
-    position: relative;
-    width: 100%;
-    min-height: 100vh;
-    min-height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: #f5ecd3;
-    background: #1c3a2e;
-    padding: var(--box-padding);
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    transition: background-color 0.05s linear;
-  }
-
-  #content {
-    max-width: var(--content-max-width);
-    width: 100%;
-    padding-top: calc(env(safe-area-inset-top) + 8px);
-    padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
-  }
-
-  #idle-title {
-    font-size: clamp(34px, 7vw, 46px);
-    font-weight: 700;
-    margin-bottom: 18px;
-  }
-
-  #main-text {
-    font-size: clamp(34px, 7vw, 44px);
-    font-weight: 700;
-    margin-bottom: 14px;
-  }
-
-  #retrieving-text {
-    display: none;
-    font-size: clamp(20px, 4.5vw, 24px);
-    font-weight: 600;
-    opacity: 0.9;
-    text-align: center;
-  }
-
-  #sub-text {
-    font-size: clamp(17px, 4.2vw, 19px);
-    line-height: 1.6;
-    opacity: 0.9;
-  }
-
-  #share-bar {
-    position: absolute;
-    top: var(--share-top);
-    right: var(--share-right);
-    left: var(--share-left);
-    width: var(--share-width);
-    display: flex;
-    justify-content: var(--share-justify);
-    gap: var(--share-gap);
-    z-index: 2;
-  }
-
-  .share-btn {
-    appearance: none;
-    border: 0;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.16);
-    color: #f5ecd3;
-    padding: 10px 14px;
-    min-height: 42px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-  }
-
-  .share-btn:active { transform: scale(0.98); }
-
-  #stats {
-    display: none;
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: var(--stats-bottom);
-    justify-content: center;
-    gap: var(--stats-gap);
-    flex-wrap: wrap;
-    padding: 0 var(--stats-padding-x);
-  }
-
-  .stat-card {
-    min-width: var(--stats-card-min-width);
-    padding: 12px 18px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-  }
-
-  .stat-label {
-    font-size: 11px;
-    opacity: 0.82;
-    margin-bottom: 4px;
-  }
-
-  .stat-value {
-    font-size: 18px;
-    font-weight: 700;
-  }
-
-  #ios-install-hint {
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    top: calc(var(--share-top) + 54px);
-    z-index: 2;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: rgba(0,0,0,0.55);
-    color: #f5ecd3;
-    font-size: 13px;
-    line-height: 1.4;
-    padding: 10px 14px;
-    border-radius: 12px;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    opacity: 0;
-    transform: translateY(-12px) scale(0.94);
-  }
-
-  #ios-install-hint.is-visible {
-    display: flex;
-    animation: ios-hint-pop-in 0.46s cubic-bezier(.32,1.5,.55,1) forwards;
-  }
-
-  #ios-install-hint.is-hiding {
-    display: flex;
-    animation: ios-hint-pop-out 0.26s cubic-bezier(.4,0,1,1) forwards;
-  }
-
-  @keyframes ios-hint-pop-in {
-    0%   { opacity: 0; transform: translateY(-12px) scale(0.94); }
-    55%  { opacity: 1; transform: translateY(3px) scale(1.015); }
-    100% { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  @keyframes ios-hint-pop-out {
-    0%   { opacity: 1; transform: translateY(0) scale(1); }
-    100% { opacity: 0; transform: translateY(-8px) scale(0.96); }
-  }
-
-  #ios-install-hint-text {
-    display: inline-block;
-  }
-
-  #ios-install-hint-text .hint-char {
-    display: inline-block;
-    opacity: 0;
-    transform: translateY(7px);
-    animation: hint-char-in 0.4s cubic-bezier(.2,.85,.25,1) forwards;
-    animation-delay: var(--char-delay, 0s);
-  }
-
-  @keyframes hint-char-in {
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  #ios-install-hint-close {
-    appearance: none;
-    border: 0;
-    background: transparent;
-    color: #f5ecd3;
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
-    opacity: 0;
-    padding: 2px 4px;
-    flex-shrink: 0;
-    animation: hint-close-in 0.3s ease forwards;
-    animation-delay: var(--close-delay, 0.7s);
-  }
-
-  @keyframes hint-close-in {
-    to { opacity: 0.8; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    #ios-install-hint,
-    #ios-install-hint.is-visible,
-    #ios-install-hint.is-hiding {
-      animation: none;
-      opacity: 1;
-      transform: none;
-    }
-    #ios-install-hint.is-visible { display: flex; }
-    #ios-install-hint-text .hint-char {
-      animation: none;
-      opacity: 1;
-      transform: none;
-    }
-    #ios-install-hint-close {
-      animation: none;
-      opacity: 0.8;
-    }
-  }
-
-  body.device-mobile {
-    --box-padding: 18px;
-    --content-max-width: 100%;
-    --share-top: max(12px, env(safe-area-inset-top));
-    --share-right: 12px;
-    --share-gap: 8px;
-    --stats-bottom: max(14px, env(safe-area-inset-bottom));
-    --stats-gap: 10px;
-    --stats-card-min-width: calc(50% - 8px);
-  }
-
-  body.device-mobile #share-bar,
-  body.device-mobile.landscape-short #share-bar {
-    left: 12px;
-    right: 12px;
-    width: auto;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-
-  body.device-mobile .share-btn {
-    min-height: 40px;
-    padding: 9px 12px;
-    font-size: 13px;
-  }
-
-  body.device-mobile .stat-card {
-    padding: 10px 12px;
-  }
-
-  body.device-mobile .stat-value,
-  body.device-tablet .stat-value { font-size: 16px; }
-
-  body.device-tablet {
-    --box-padding: 22px;
-    --content-max-width: 680px;
-    --share-top: max(14px, env(safe-area-inset-top));
-    --share-right: 14px;
-    --stats-card-min-width: 140px;
-  }
-
-  body.device-desktop {
-    --box-padding: 28px;
-    --content-max-width: 820px;
-    --share-top: 18px;
-    --share-right: 18px;
-    --stats-bottom: 24px;
-    --stats-card-min-width: 140px;
-  }
-
-  body.landscape-short {
-    --box-padding: 14px;
-    --share-top: max(8px, env(safe-area-inset-top));
-    --stats-bottom: max(8px, env(safe-area-inset-bottom));
-    --stats-gap: 8px;
-  }
-
-  body.landscape-short #content {
-    padding-top: 34px;
-    padding-bottom: 70px;
-  }
-
-  body.landscape-short #stats {
-    transform: scale(0.95);
-    transform-origin: bottom center;
-  }
-
-  @media (max-width: 640px) {
-    .stat-value { font-size: 16px; }
-  }
-
-  #seo-content {
-    background: #0f1a16;
-    color: #f5ecd3;
-    padding: 56px 20px 72px;
-  }
-
-  #seo-content .seo-inner {
-    max-width: 760px;
-    margin: 0 auto;
-  }
-
-  #seo-content h2 {
-    font-size: clamp(20px, 4vw, 26px);
-    font-weight: 700;
-    margin: 44px 0 16px;
-    color: #f5ecd3;
-  }
-
-  #seo-content h2:first-child {
-    margin-top: 0;
-  }
-
-  #seo-content h3 {
-    font-size: clamp(16px, 3.5vw, 20px);
-    font-weight: 700;
-    margin: 28px 0 12px;
-    color: #f5ecd3;
-    border-left: 4px solid #c4a273;
-    padding-left: 10px;
-  }
-
-  #seo-content h4 {
-    font-size: clamp(14px, 3vw, 16px);
-    font-weight: 700;
-    margin: 20px 0 8px;
-    color: #e0e0e0;
-  }
-
-  #seo-content p,
-  #seo-content li {
-    font-size: 15px;
-    line-height: 1.8;
-    color: #cfcfcf;
-  }
-
-  #seo-content ul,
-  #seo-content ol {
-    padding-left: 1.3em;
-    margin: 12px 0;
-  }
-
-  #seo-content li {
-    margin-bottom: 8px;
-  }
-
-  #seo-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 16px 0 8px;
-    font-size: 14px;
-  }
-
-  #seo-table th,
-  #seo-table td {
-    text-align: left;
-    padding: 10px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.12);
-    color: #cfcfcf;
-  }
-
-  #seo-table th {
-    color: #f5ecd3;
-    font-weight: 700;
-    background: rgba(255,255,255,0.04);
-  }
-
-  .faq-item {
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding: 16px 0;
-  }
-
-  .faq-item:first-child {
-    border-top: 1px solid rgba(255,255,255,0.1);
-  }
-
-  .faq-item h3 {
-    margin: 0 0 8px;
-    font-size: 16px;
-    border-left: none;
-    padding-left: 0;
-  }
-
-  .faq-item p {
-    margin: 0;
-  }
-
-  .ad-slot {
-    margin: 36px 0;
-    text-align: center;
-  }
-
-  .ad-slot-label {
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    color: rgba(255,255,255,0.4);
-    margin-bottom: 6px;
-  }
-
-  /* ▼▼ スクロール演出（フェードイン／拡大／波） ▼▼ */
-  #scroll-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 3px;
-    width: 0%;
-    background: #c4a273;
-    z-index: 9999;
-    transition: width 0.08s linear;
-  }
-
-  .reveal {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s cubic-bezier(.2,.7,.3,1), transform 0.6s cubic-bezier(.2,.7,.3,1);
-    will-change: opacity, transform;
-  }
-
-  .reveal.reveal-scale {
-    transform: scale(0.95) translateY(0);
-  }
-
-  .reveal.is-visible {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  .faq-item.reveal {
-    transform: translateY(16px);
-  }
-
-  #box.box-intro {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-
-  #box.box-intro.is-visible {
-    opacity: 1;
-    transform: scale(1);
-    transition: opacity 0.7s cubic-bezier(.2,.7,.3,1), transform 0.7s cubic-bezier(.2,.7,.3,1);
-  }
-
-  .share-btn {
-    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
-  }
-
-  .share-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-    background: rgba(255,255,255,0.24);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .reveal,
-    .reveal.reveal-scale,
-    #box.box-intro {
-      opacity: 1;
-      transform: none;
-      transition: none;
-    }
-    .share-btn:hover {
-      transform: none;
-    }
-  }
-  /* ▲▲ スクロール演出ここまで ▲▲ */
-
-  /* ▼▼ 追加演出（Ripple／マウス追従ライト／ベスト更新／パルス／背景グラデーション） ▼▼ */
-  #content { position: relative; z-index: 1; }
-
-  /* ▼▼ アカウントアイコン／パネル ▼▼ */
-  #account-toggle-btn {
-    position: absolute;
-    top: var(--share-top);
-    right: 14px;
-    z-index: 5;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.25);
-    background: rgba(255,255,255,0.12);
-    color: #f5ecd3;
-    font-size: 14px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    transition: transform 0.15s ease, background-color 0.15s ease;
-  }
-
-  #account-toggle-btn:hover {
-    transform: translateY(-1px);
-    background: rgba(255,255,255,0.2);
-  }
-
-  #account-panel {
-    position: absolute;
-    top: calc(var(--share-top) + 46px);
-    right: 14px;
-    z-index: 6;
-    width: 290px;
-    max-width: calc(100vw - 28px);
-    max-height: min(76vh, 560px);
-    overflow-y: auto;
-    background: #16241d;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 16px;
-    padding: 18px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    opacity: 0;
-    transform: translateY(-8px);
-    pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-
-  #account-panel.open {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-
-  #account-panel .account-status {
-    font-size: 12.5px;
-    color: rgba(255,255,255,0.55);
-    margin-bottom: 14px;
-  }
-
-  #account-panel .account-stats {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-
-  #account-panel .account-stat {
-    flex: 1;
-    text-align: center;
-    background: rgba(255,255,255,0.06);
-    border-radius: 10px;
-    padding: 8px 4px;
-  }
-
-  #account-panel .account-stat-label {
-    font-size: 10.5px;
-    color: rgba(255,255,255,0.45);
-    margin-bottom: 2px;
-  }
-
-  #account-panel .account-stat-value {
-    font-size: 14px;
-    font-weight: 700;
-    color: #f5ecd3;
-  }
-
-  #account-panel label {
-    display: block;
-    font-size: 11.5px;
-    color: rgba(255,255,255,0.5);
-    margin-bottom: 6px;
-  }
-
-  #nickname-input {
-    width: 100%;
-    background: #1e2a24;
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 8px;
-    padding: 8px 10px;
-    color: #f5ecd3;
-    font-size: 13px;
-    margin-bottom: 8px;
-  }
-
-  #nickname-save-btn {
-    width: 100%;
-    background: #c4a273;
-    border: none;
-    color: #0f1a16;
-    border-radius: 8px;
-    padding: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 14px;
-  }
-
-  #nickname-save-btn:hover { background: #d8bd94; }
-
-  #account-google-btn,
-  #account-logout-btn {
-    width: 100%;
-    background: none;
-    border: 1px solid rgba(255,255,255,0.18);
-    color: rgba(255,255,255,0.85);
-    border-radius: 8px;
-    padding: 9px;
-    font-size: 13px;
-    cursor: pointer;
-  }
-
-  #account-google-btn:hover,
-  #account-logout-btn:hover { background: rgba(255,255,255,0.08); }
-
-  /* ▼▼ フレンド機能 ▼▼ */
-  .account-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 14px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 10px;
-    padding: 3px;
-  }
-
-  .account-tab-btn {
-    flex: 1;
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.55);
-    font-size: 12.5px;
-    font-weight: 600;
-    padding: 7px 4px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
-  }
-
-  .account-tab-btn.active {
-    background: #c4a273;
-    color: #0f1a16;
-  }
-
-  .friend-hint-text {
-    font-size: 12.5px;
-    color: rgba(255,255,255,0.6);
-    line-height: 1.6;
-    margin: 0 0 12px;
-  }
-
-  #friend-google-btn {
-    width: 100%;
-    background: #c4a273;
-    border: none;
-    color: #0f1a16;
-    border-radius: 8px;
-    padding: 9px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  #friend-google-btn:hover { background: #d8bd94; }
-
-  .friend-block { margin-bottom: 16px; }
-  .friend-block:last-child { margin-bottom: 0; }
-
-  .friend-section-title {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: rgba(255,255,255,0.5);
-    margin-bottom: 8px;
-    letter-spacing: 0.02em;
-  }
-
-  .friend-id-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 8px;
-    padding: 8px 10px;
-  }
-
-  #friend-my-code {
-    flex: 1;
-    font-size: 14px;
-    font-weight: 700;
-    color: #f5ecd3;
-    letter-spacing: 0.03em;
-    font-family: "SFMono-Regular", Consolas, monospace;
-  }
-
-  #friend-copy-code-btn {
-    background: rgba(255,255,255,0.1);
-    border: none;
-    color: #f5ecd3;
-    border-radius: 6px;
-    padding: 5px 10px;
-    font-size: 11.5px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  #friend-copy-code-btn:hover { background: rgba(255,255,255,0.18); }
-
-  .friend-add-row {
-    display: flex;
-    gap: 6px;
-  }
-
-  #friend-add-input {
-    flex: 1;
-    min-width: 0;
-    background: #1e2a24;
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 8px;
-    padding: 8px 10px;
-    color: #f5ecd3;
-    font-size: 13px;
-    text-transform: uppercase;
-  }
-
-  #friend-add-btn {
-    flex-shrink: 0;
-    background: #c4a273;
-    border: none;
-    color: #0f1a16;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  #friend-add-btn:hover { background: #d8bd94; }
-  #friend-add-btn:disabled { opacity: 0.6; cursor: default; }
-
-  .friend-status-text {
-    font-size: 11.5px;
-    margin-top: 6px;
-    min-height: 14px;
-    color: rgba(255,255,255,0.55);
-  }
-
-  .friend-status-text.is-error { color: #ff8080; }
-  .friend-status-text.is-success { color: #6bd48a; }
-
-  .friend-empty {
-    font-size: 12px;
-    color: rgba(255,255,255,0.4);
-    padding: 6px 2px;
-  }
-
-  .friend-request-row,
-  .friend-list-row,
-  .friend-rank-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 8px;
-    padding: 8px 10px;
-    margin-bottom: 6px;
-  }
-
-  .friend-request-row:last-child,
-  .friend-list-row:last-child,
-  .friend-rank-row:last-child { margin-bottom: 0; }
-
-  .friend-avatar {
-    font-size: 15px;
-    flex-shrink: 0;
-  }
-
-  .friend-name {
-    flex: 1;
-    min-width: 0;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: #f5ecd3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .friend-sub {
-    font-size: 10.5px;
-    color: rgba(255,255,255,0.45);
-  }
-
-  .friend-score {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #6bd0ff;
-    flex-shrink: 0;
-    text-align: right;
-  }
-
-  .friend-rank-medal {
-    font-size: 15px;
-    width: 22px;
-    flex-shrink: 0;
-    text-align: center;
-  }
-
-  .friend-req-btn {
-    border: none;
-    border-radius: 6px;
-    padding: 5px 9px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  .friend-req-accept { background: #c4a273; color: #0f1a16; }
-  .friend-req-accept:hover { background: #d8bd94; }
-  .friend-req-decline { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
-  .friend-req-decline:hover { background: rgba(255,255,255,0.18); }
-  /* ▲▲ フレンド機能ここまで ▲▲ */
-  /* ▲▲ アカウントアイコン／パネルここまで ▲▲ */
-
-  #box::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, rgba(43,135,209,0.35), rgba(155,89,209,0.30), rgba(43,135,209,0.35));
-    background-size: 220% 220%;
-    mix-blend-mode: overlay;
-    opacity: 0.55;
-    pointer-events: none;
-    animation: bg-drift 30s ease-in-out infinite;
-    z-index: 0;
-  }
-
-  @keyframes bg-drift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-
-  #box::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.16), transparent 60%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  #box.has-light::after { opacity: 1; }
-
-  .share-btn { position: relative; overflow: hidden; }
-
-  .ripple {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.55);
-    transform: scale(0);
-    opacity: 1;
-    pointer-events: none;
-    animation: ripple-anim 0.6s ease-out forwards;
-  }
-
-  @keyframes ripple-anim {
-    to { transform: scale(2.6); opacity: 0; }
-  }
-
-  #best-record-flash {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 3;
-    opacity: 0;
-  }
-
-  #best-record-flash.show {
-    animation: record-flash 0.8s ease-out forwards;
-  }
-
-  .record-flash-text {
-    font-size: clamp(20px, 5vw, 28px);
-    font-weight: 800;
-    color: #f5ecd3;
-    letter-spacing: 0.04em;
-    text-shadow: 0 0 20px rgba(255,255,255,0.8);
-    background: radial-gradient(circle, rgba(255,215,0,0.35), transparent 70%);
-    padding: 18px 36px;
-    border-radius: 20px;
-  }
-
-  @keyframes record-flash {
-    0%   { opacity: 0; transform: scale(0.7); }
-    30%  { opacity: 1; transform: scale(1.08); }
-    70%  { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; transform: scale(1); }
-  }
-
-  #main-text.pulse-ms {
-    animation: ms-pulse 0.3s ease-out;
-  }
-
-  @keyframes ms-pulse {
-    0%   { transform: scale(0.95); }
-    50%  { transform: scale(1.05); }
-    100% { transform: scale(1); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    #box::before, #box::after { animation: none; opacity: 0; }
-    #best-record-flash.show { animation: none; opacity: 0; }
-    #main-text.pulse-ms { animation: none; }
-  }
-  /* ▲▲ 追加演出ここまで ▲▲ */
-
-  /* ▼▼ ログイン誘導オーバーレイ／アカウントフッター ▼▼ */
-  #account-footer {
-    padding: 32px 20px 48px;
-    text-align: center;
-  }
-
-  #account-footer-inner {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.45);
-  }
-
-  #logout-btn {
-    background: none;
-    border: 1px solid rgba(255,255,255,0.2);
-    color: rgba(255,255,255,0.6);
-    border-radius: 8px;
-    padding: 6px 14px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
-  }
-
-  #logout-btn:hover {
-    background: rgba(255,255,255,0.08);
-    color: #f5ecd3;
-  }
-
-  #login-splash {
-    position: fixed;
-    inset: 0;
-    background: rgba(8,8,10,0.92);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.35s ease;
-  }
-
-  #login-splash.show {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .login-splash-card {
-    width: 100%;
-    max-width: 400px;
-    background: #16241d;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 20px;
-    padding: 36px 28px;
-    text-align: center;
-    box-shadow: 0 24px 70px rgba(0,0,0,0.55);
-    transform: translateY(10px) scale(0.98);
-    transition: transform 0.35s cubic-bezier(.2,.7,.3,1);
-  }
-
-  #login-splash.show .login-splash-card {
-    transform: translateY(0) scale(1);
-  }
-
-  .login-splash-title {
-    font-size: 21px;
-    font-weight: 800;
-    margin: 0 0 8px;
-    color: #f5ecd3;
-  }
-
-  .login-splash-tagline {
-    font-size: 13.5px;
-    line-height: 1.6;
-    color: rgba(255,255,255,0.55);
-    margin: 0 0 24px;
-  }
-
-  .login-splash-google-btn {
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: #f5ecd3;
-    color: #1f1f1f;
-    font-weight: 600;
-    font-size: 14.5px;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  .login-splash-google-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
-  }
-
-  .login-splash-skip {
-    display: block;
-    margin: 16px auto 0;
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.45);
-    font-size: 12.5px;
-    text-decoration: underline;
-    cursor: pointer;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    #login-splash, .login-splash-card { transition: none; }
-  }
-  /* ▲▲ ログイン誘導オーバーレイここまで ▲▲ */
-  /* ===== Concierge-inspired theme touches: serif headlines, gold selection ===== */
-  #idle-title,
-  #main-text,
-  .stat-value,
-  .account-stat-value {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-  }
-  #site-copyright {
-    text-align: center;
-    font-size: 11.5px;
-    letter-spacing: 0.04em;
-    color: rgba(245,236,211,0.4);
-    padding: 20px 16px calc(env(safe-area-inset-bottom) + 90px);
-  }
-  ::selection { background: #c4a273; color: #0f1a16; }
+/* ===========================================================
+   Shared iPhone Frame + Showcase Layout
+   Used across all 10 mobile app demo templates.
+   =========================================================== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+}
+
+/* ----- Showcase shell ------------------------------------- */
+.showcase {
+  width: 100%;
+  min-height: 100vh;
+  padding: 56px 36px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.showcase-header {
+  width: 100%;
+  max-width: 1600px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 72px;
+}
+
+.showcase-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 500;
+  opacity: 0.55;
+}
+
+.showcase-title {
+  font-size: clamp(40px, 5vw, 72px);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  font-weight: 500;
+  margin-top: 16px;
+  max-width: 720px;
+}
+
+.showcase-meta {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  text-align: right;
+  line-height: 1.7;
+}
+
+/* ----- Phone rail ----------------------------------------- */
+.phone-rail-outer {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.phone-rail {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: nowrap;
+  padding: 0 36px 12px;
+  width: max-content;
+  min-width: 100%;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+/* ----- The phone itself ---------------------------------- */
+/* iPhone 17 Pro Max proportions (440 × 956 ≈ 2.17). 
+   Scaled to fit 5-up at ~1700px showcase width. */
+.phone {
+  --phone-w: 320px;
+  --phone-h: 695px;
+  width: var(--phone-w);
+  height: var(--phone-h);
+  flex-shrink: 0;
+  background: #0a0a0a;
+  border-radius: 50px;
+  padding: 10px;
+  box-shadow:
+    0 0 0 1.5px rgba(255,255,255,0.06),
+    0 40px 80px -24px rgba(0,0,0,0.45),
+    0 24px 48px -12px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+/* When phone is direct child of phone-wrap (column flex), we need to make
+   sure the wrap also reserves space for caption. */
+.phone-wrap {
+  width: var(--phone-w, 320px);
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dynamic island */
+.phone-screen::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 30px;
+  background: #000;
+  border-radius: 16px;
+  z-index: 100;
+}
+
+/* iOS status bar */
+.status-bar {
+  height: 50px;
+  padding: 16px 28px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 14px;
+  font-weight: 600;
+  color: inherit;
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.status-bar .status-icons {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.status-bar svg {
+  width: 18px;
+  height: 12px;
+}
+
+/* Home indicator */
+.home-indicator {
+  position: absolute;
+  bottom: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 4px;
+  background: currentColor;
+  opacity: 0.35;
+  border-radius: 2px;
+  z-index: 100;
+}
+
+/* Caption beneath each phone */
+.phone-caption {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* wrapper for phone + caption */
+.phone-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+/* ----- Showcase footer (design system strip) -------------- */
+.showcase-footer {
+  width: 100%;
+  max-width: 1600px;
+  margin-top: 120px;
+  padding-top: 32px;
+  border-top: 1px solid currentColor;
+  border-top-color: rgba(128,128,128,0.15);
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.footer-block-label {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  margin-bottom: 12px;
+}
+
+.swatches {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  position: relative;
+}
+
+/* ===== Hide ALL scrollbars globally =====
+   Scrolling still works, just no visible chrome. */
+*::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+* { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+html, body { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+html::-webkit-scrollbar, body::-webkit-scrollbar { display: none !important; }
+
+/* Status bar icons utility (battery + wifi + signal) */
+.status-bar-signal {
+  display: inline-flex;
+  gap: 2px;
+  align-items: flex-end;
+}
+.status-bar-signal i {
+  width: 3px;
+  background: currentColor;
+  border-radius: 1px;
+  display: inline-block;
+}
+.status-bar-signal i:nth-child(1) { height: 4px; }
+.status-bar-signal i:nth-child(2) { height: 6px; }
+.status-bar-signal i:nth-child(3) { height: 8px; }
+.status-bar-signal i:nth-child(4) { height: 10px; }
+
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1a16;
+    --bg-2: #1a2620;
+    --ink: #f5ecd3;
+    --ink-soft: #a0a59e;
+    --gold: #c4a273;
+    --emerald: #2c5a48;
+    --rose: #c08a8a;
+  }
+  body { background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; font-weight: 300; }
+  .brand-mark { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 400; letter-spacing: 0.02em; }
+  .brand-mark::before { content: '◆ '; color: var(--gold); font-size: 18px; vertical-align: 6px; }
+  .showcase-title { font-family: 'Cormorant Garamond', serif; font-weight: 400; letter-spacing: -0.01em; }
+  .showcase-title em { font-style: italic; color: var(--gold); }
+
+  .phone-screen { background: var(--bg); color: var(--ink); }
+
+  /* ===== Screen 1: Welcome / Stay overview ===== */
+  .s-welcome { padding: 60px 22px 30px; flex: 1; overflow: hidden; }
+  .w-eyebrow { font-size: 10px; letter-spacing: 0.25em; opacity: 0.65; text-transform: uppercase; color: var(--gold); }
+  .w-h { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400; line-height: 1.05; margin: 4px 0 6px; }
+  .w-h em { font-style: italic; color: var(--gold); }
+  .w-sub { font-size: 12px; opacity: 0.7; margin-bottom: 18px; }
+  .w-stay-card { background: url('assets/hotel-suite.jpg') center/cover; border-radius: 18px; aspect-ratio: 1.3; position: relative; overflow: hidden; margin-bottom: 14px; }
+  .w-stay-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(15,26,22,0.95) 100%); }
+  .w-stay-info { position: absolute; bottom: 16px; left: 16px; right: 16px; z-index: 1; }
+  .w-stay-suite { font-size: 10px; letter-spacing: 0.25em; opacity: 0.85; text-transform: uppercase; color: var(--gold); }
+  .w-stay-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-style: italic; margin-top: 4px; line-height: 1; }
+  .w-stay-dates { font-size: 11px; opacity: 0.85; margin-top: 6px; letter-spacing: 0.05em; }
+  .w-section-h { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; opacity: 0.75; margin-bottom: 10px; }
+  .w-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .w-q { background: var(--bg-2); border: 1px solid rgba(196,162,115,0.15); border-radius: 14px; padding: 14px; display: flex; gap: 12px; align-items: center; }
+  .w-q .ic { width: 38px; height: 38px; border-radius: 50%; background: rgba(196,162,115,0.15); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .w-q .info .l { font-size: 9px; letter-spacing: 0.2em; opacity: 0.55; text-transform: uppercase; }
+  .w-q .info .v { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; margin-top: 2px; font-weight: 400; }
+
+  /* ===== Screen 2: Request concierge ===== */
+  .s-req { padding: 60px 22px 30px; flex: 1; overflow: hidden; }
+  .rq-eyebrow { font-size: 10px; letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase; }
+  .rq-h { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; line-height: 1.05; margin: 4px 0 18px; }
+  .rq-h em { font-style: italic; color: var(--gold); }
+  .rq-card { background: var(--bg-2); border: 1px solid rgba(196,162,115,0.15); border-radius: 14px; padding: 14px; display: flex; gap: 14px; align-items: center; margin-bottom: 10px; }
+  .rq-card .ic { width: 44px; height: 44px; border-radius: 50%; background: rgba(196,162,115,0.12); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .rq-card .info { flex: 1; }
+  .rq-card .nm { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 16px; }
+  .rq-card .meta { font-size: 10px; opacity: 0.6; letter-spacing: 0.05em; margin-top: 3px; }
+  .rq-card .arr { font-size: 14px; opacity: 0.4; }
+  .rq-section-h { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; opacity: 0.7; margin: 14px 0 10px; }
+
+  /* ===== Screen 3: Chat with concierge ===== */
+  .s-chat { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .ch-top { padding: 60px 22px 14px; border-bottom: 1px solid rgba(196,162,115,0.15); display: flex; gap: 12px; align-items: center; }
+  .ch-back { font-size: 18px; opacity: 0.65; }
+  .ch-av { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), #8a6a3a); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 16px; color: var(--bg); }
+  .ch-info { flex: 1; }
+  .ch-info .nm { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 15px; }
+  .ch-info .role { font-size: 9px; opacity: 0.65; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+  .ch-body { padding: 18px 22px; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 12px; }
+  .ch-day { text-align: center; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.45; }
+  .ch-msg { max-width: 78%; padding: 12px 14px; border-radius: 16px; font-size: 13px; line-height: 1.45; }
+  .ch-msg.them { background: var(--bg-2); border: 1px solid rgba(196,162,115,0.15); align-self: flex-start; border-bottom-left-radius: 4px; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; }
+  .ch-msg.me { background: var(--gold); color: var(--bg); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .ch-recommendation { background: var(--bg-2); border: 1px solid var(--gold); border-radius: 14px; padding: 14px; align-self: flex-start; max-width: 88%; }
+  .ch-recommendation .pre { font-size: 9px; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; }
+  .ch-recommendation .nm { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 17px; margin-top: 4px; }
+  .ch-recommendation .desc { font-size: 11px; opacity: 0.7; line-height: 1.4; margin-top: 4px; }
+  .ch-input { margin-top: auto; background: var(--bg-2); border: 1px solid rgba(196,162,115,0.15); border-radius: 30px; padding: 12px 16px; display: flex; gap: 10px; align-items: center; font-size: 12px; opacity: 0.85; }
+  .ch-input .send { width: 32px; height: 32px; border-radius: 50%; background: var(--gold); color: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 14px; margin-left: auto; }
+
+  /* ===== Screen 4: Reservation ===== */
+  .s-res { padding: 60px 22px 30px; flex: 1; overflow: hidden; }
+  .rs-eyebrow { font-size: 10px; letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase; }
+  .rs-h { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; line-height: 1.05; margin: 4px 0 18px; }
+  .rs-h em { font-style: italic; color: var(--gold); }
+  .rs-card { background: var(--bg-2); border: 1px solid rgba(196,162,115,0.15); border-radius: 14px; padding: 16px; margin-bottom: 10px; }
+  .rs-card .name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 19px; }
+  .rs-card .by { font-size: 10px; opacity: 0.6; letter-spacing: 0.05em; margin-top: 3px; }
+  .rs-card .when { display: flex; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(196,162,115,0.1); }
+  .rs-card .when div { flex: 1; }
+  .rs-card .when .l { font-size: 9px; opacity: 0.55; letter-spacing: 0.18em; text-transform: uppercase; }
+  .rs-card .when .v { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--gold); margin-top: 3px; }
+  .rs-card .actions { display: flex; gap: 6px; margin-top: 12px; }
+  .rs-card .actions span { flex: 1; padding: 8px; text-align: center; border-radius: 30px; font-size: 10px; letter-spacing: 0.1em; background: rgba(196,162,115,0.1); color: var(--gold); }
+
+  /* ===== Screen 5: Key card ===== */
+  .s-key { padding: 60px 22px 30px; flex: 1; overflow: hidden; }
+  .k-eyebrow { font-size: 10px; letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase; }
+  .k-h { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; line-height: 1.05; margin: 4px 0 18px; }
+  .k-h em { font-style: italic; color: var(--gold); }
+  .k-card { aspect-ratio: 1.45; background: linear-gradient(135deg, var(--emerald) 0%, #1c4030 100%); border-radius: 20px; padding: 22px 22px 24px; position: relative; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.5); margin-bottom: 14px; display: flex; flex-direction: column; }
+  .k-card::before { content: ''; position: absolute; top: 22px; right: 22px; width: 36px; height: 24px; background: linear-gradient(135deg, var(--gold), #8a6a3a); border-radius: 4px; z-index: 1; }
+  .k-card::after { content: '◆'; position: absolute; bottom: -60px; right: -36px; font-size: 180px; color: rgba(196,162,115,0.08); pointer-events: none; }
+  .k-card > * { position: relative; z-index: 1; }
+  .k-card .l { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 12px; opacity: 0.85; letter-spacing: 0.1em; }
+  .k-card .num { font-family: 'Cormorant Garamond', serif; font-size: 56px; margin-top: auto; letter-spacing: 0.02em; line-height: 1; }
+  .k-card .suite { font-size: 10px; opacity: 0.85; margin-top: 6px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+  .k-card .name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 16px; margin-top: 8px; opacity: 0.9; }
+  .k-tap { background: var(--gold); color: var(--bg); padding: 13px; border-radius: 30px; text-align: center; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; }
+  .k-info { font-size: 11px; opacity: 0.6; text-align: center; margin-top: 14px; line-height: 1.5; font-family: 'Cormorant Garamond', serif; font-style: italic; }
 </style>
 </head>
-<body translate="no" class="notranslate">
-  <div id="scroll-progress"></div>
-  <noscript>
-    <p>反応速度テスト（Reaction Time Test）を利用するにはJavaScriptを有効にしてください。画面が緑色に変わった瞬間にタップして、あなたの反応速度（リアクションタイム）を測定できます。</p>
-  </noscript>
-  <div id="box" class="box-intro" role="button" aria-label="Reaction Time Test">
-    <div id="share-bar">
-      <button id="install-btn" class="share-btn" type="button" style="display:none;">ホーム画面に追加</button>
+<body>
+<div class="showcase">
+
+  <header class="showcase-header">
+    <div>
+      <div class="brand-mark">Concierge</div>
+      <div class="showcase-title">Hospitality, at<br>your <em>fingertips.</em></div>
     </div>
+    <div class="showcase-meta">
+      Template 22 / 30<br>
+      Hospitality<br>
+      v1.0
+    </div>
+  </header>
 
-    <button id="account-toggle-btn" type="button" aria-label="アカウント">
-      <span id="account-toggle-label">?</span>
-    </button>
+  <div class="phone-rail-outer"><div class="phone-rail">
 
-    <div id="account-panel">
-      <div class="account-tabs">
-        <button type="button" class="account-tab-btn active" data-tab="profile">プロフィール</button>
-        <button type="button" class="account-tab-btn" data-tab="friends">フレンド</button>
-      </div>
-
-      <div class="account-tab-panel" data-tab-panel="profile">
-        <div class="account-status" id="account-status-text">読み込み中…</div>
-
-        <div class="account-stats">
-          <div class="account-stat">
-            <div class="account-stat-label">ベスト</div>
-            <div class="account-stat-value" id="account-stat-best">–</div>
-          </div>
-          <div class="account-stat">
-            <div class="account-stat-label">平均</div>
-            <div class="account-stat-value" id="account-stat-avg">–</div>
-          </div>
-          <div class="account-stat">
-            <div class="account-stat-label">回数</div>
-            <div class="account-stat-value" id="account-stat-games">–</div>
+    <!-- Phone 1 -->
+    <div class="phone-wrap"><div class="phone"><div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><div class="status-icons"><span class="status-bar-signal"><i></i><i></i><i></i><i></i></span><svg viewBox="0 0 16 11" fill="currentColor"><path d="M8 2.5a8 8 0 0 0-5.66 2.34l.95.95a6.66 6.66 0 0 1 9.42 0l.95-.95A8 8 0 0 0 8 2.5z"/></svg><svg viewBox="0 0 24 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2.5" stroke="currentColor" opacity="0.5"/><rect x="2" y="2" width="17" height="7" rx="1.5" fill="currentColor"/></svg></div></div>
+      <div class="s-welcome">
+        <div class="w-eyebrow">WELCOME</div>
+        <div class="w-h">Good evening,<br><em>Ms. Voss</em></div>
+        <div class="w-sub">Hôtel Saint-Tropez · arrival confirmed</div>
+        <div class="w-stay-card">
+          <div class="w-stay-info">
+            <div class="w-stay-suite">JARDIN SUITE · 4TH FLOOR</div>
+            <div class="w-stay-name">Suite Magnolia</div>
+            <div class="w-stay-dates">APR 12 — APR 18 · 6 NIGHTS · SEA VIEW</div>
           </div>
         </div>
-
-        <label for="nickname-input">ニックネーム</label>
-        <input id="nickname-input" type="text" maxlength="18" placeholder="未設定">
-        <div id="nickname-error" style="display:none;font-size:11.5px;color:#ff6b6b;margin:-4px 0 8px;line-height:1.5;"></div>
-        <button id="nickname-save-btn" type="button">保存</button>
-
-        <button id="account-google-btn" type="button" style="display:none;">Googleでログイン</button>
-        <button id="account-logout-btn" type="button" style="display:none;">ログアウト</button>
-      </div>
-
-      <div class="account-tab-panel" data-tab-panel="friends" style="display:none;">
-        <div id="friend-login-required">
-          <p class="friend-hint-text">フレンド機能を使うにはGoogleログインが必要です。</p>
-          <button id="friend-google-btn" type="button">Googleでログイン</button>
-        </div>
-
-        <div id="friend-main">
-          <div class="friend-block">
-            <div class="friend-section-title">あなたのID</div>
-            <div class="friend-id-row">
-              <span id="friend-my-code">–</span>
-              <button type="button" id="friend-copy-code-btn">コピー</button>
-            </div>
-          </div>
-
-          <div class="friend-block">
-            <div class="friend-section-title">＋ フレンド追加</div>
-            <div class="friend-add-row">
-              <input id="friend-add-input" type="text" placeholder="SUN-XXXXXX" maxlength="12" autocapitalize="characters">
-              <button type="button" id="friend-add-btn">追加</button>
-            </div>
-            <div id="friend-add-status" class="friend-status-text"></div>
-          </div>
-
-          <div class="friend-block" id="friend-requests-block" style="display:none;">
-            <div class="friend-section-title">フレンドリクエスト</div>
-            <div id="friend-requests-list"></div>
-          </div>
-
-          <div class="friend-block">
-            <div class="friend-section-title">🏆 フレンドランキング</div>
-            <div id="friend-ranking-list"><div class="friend-empty">まだフレンドがいません</div></div>
-          </div>
-
-          <div class="friend-block">
-            <div class="friend-section-title">フレンド <span id="friend-count">0</span></div>
-            <div id="friend-list"><div class="friend-empty">まだフレンドがいません</div></div>
-          </div>
+        <div class="w-section-h">At your service</div>
+        <div class="w-quick">
+          <div class="w-q"><div class="ic">⌖</div><div class="info"><div class="l">ROOM SERVICE</div><div class="v">Order in</div></div></div>
+          <div class="w-q"><div class="ic">⊙</div><div class="info"><div class="l">SPA</div><div class="v">Book treatment</div></div></div>
+          <div class="w-q"><div class="ic">✦</div><div class="info"><div class="l">DINING</div><div class="v">Reservations</div></div></div>
+          <div class="w-q"><div class="ic">✉</div><div class="info"><div class="l">CONCIERGE</div><div class="v">Chat now</div></div></div>
         </div>
       </div>
+      <div class="home-indicator"></div>
+    </div></div><div class="phone-caption">01 · WELCOME</div></div>
+
+    <!-- Phone 2 -->
+    <div class="phone-wrap"><div class="phone"><div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><div class="status-icons"><span class="status-bar-signal"><i></i><i></i><i></i><i></i></span><svg viewBox="0 0 16 11" fill="currentColor"><path d="M8 2.5a8 8 0 0 0-5.66 2.34l.95.95a6.66 6.66 0 0 1 9.42 0l.95-.95A8 8 0 0 0 8 2.5z"/></svg><svg viewBox="0 0 24 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2.5" stroke="currentColor" opacity="0.5"/><rect x="2" y="2" width="17" height="7" rx="1.5" fill="currentColor"/></svg></div></div>
+      <div class="s-req">
+        <div class="rq-eyebrow">REQUEST · A SERVICE</div>
+        <div class="rq-h">How may we<br><em>help</em>?</div>
+        <div class="rq-section-h">Most requested</div>
+        <div class="rq-card">
+          <div class="ic">☕</div>
+          <div class="info"><div class="nm">Morning breakfast</div><div class="meta">SEND TO ROOM · UNTIL 11 AM</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div class="rq-card">
+          <div class="ic">⊙</div>
+          <div class="info"><div class="nm">Housekeeping</div><div class="meta">FRESH LINENS · NOW</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div class="rq-card">
+          <div class="ic">🚗</div>
+          <div class="info"><div class="nm">Valet · retrieve car</div><div class="meta">READY IN 8 MINUTES</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div class="rq-section-h">Local recommendations</div>
+        <div class="rq-card">
+          <div class="ic">✦</div>
+          <div class="info"><div class="nm">Dinner reservations</div><div class="meta">CURATED BY CONCIERGE</div></div>
+          <div class="arr">›</div>
+        </div>
+        <div class="rq-card">
+          <div class="ic">🚤</div>
+          <div class="info"><div class="nm">Private boat charter</div><div class="meta">SAINT-TROPEZ HARBOR</div></div>
+          <div class="arr">›</div>
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div></div><div class="phone-caption">02 · REQUESTS</div></div>
+
+    <!-- Phone 3 -->
+    <div class="phone-wrap"><div class="phone"><div class="phone-screen">
+      <div class="s-chat">
+        <div class="status-bar"><span>9:41</span><div class="status-icons"><span class="status-bar-signal"><i></i><i></i><i></i><i></i></span><svg viewBox="0 0 16 11" fill="currentColor"><path d="M8 2.5a8 8 0 0 0-5.66 2.34l.95.95a6.66 6.66 0 0 1 9.42 0l.95-.95A8 8 0 0 0 8 2.5z"/></svg><svg viewBox="0 0 24 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2.5" stroke="currentColor" opacity="0.5"/><rect x="2" y="2" width="17" height="7" rx="1.5" fill="currentColor"/></svg></div></div>
+        <div class="ch-top">
+          <span class="ch-back">←</span>
+          <div class="ch-av">É</div>
+          <div class="ch-info">
+            <div class="nm">Éloïse <em>Marin</em></div>
+            <div class="role">YOUR CONCIERGE</div>
+          </div>
+        </div>
+        <div class="ch-body">
+          <div class="ch-day">THURSDAY · 19:14</div>
+          <div class="ch-msg them">"Good evening, Ms. Voss. I hope your day in Saint-Tropez was lovely. May I help with anything for tonight?"</div>
+          <div class="ch-msg me">A quiet dinner for two, somewhere with a view of the water?</div>
+          <div class="ch-msg them">"Of course. May I suggest one of our favorites?"</div>
+          <div class="ch-recommendation">
+            <div class="pre">RECOMMENDED · 9-MIN WALK</div>
+            <div class="nm">La Vague d'Or</div>
+            <div class="desc">3-Michelin star · pine terrace at sea level. I can hold a 20:30 table.</div>
+          </div>
+          <div class="ch-msg me">Please. Quiet table if possible.</div>
+        </div>
+        <div class="ch-input">
+          <span>Type a message…</span>
+          <span class="send">↑</span>
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div></div><div class="phone-caption">03 · CHAT</div></div>
+
+    <!-- Phone 4 -->
+    <div class="phone-wrap"><div class="phone"><div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><div class="status-icons"><span class="status-bar-signal"><i></i><i></i><i></i><i></i></span><svg viewBox="0 0 16 11" fill="currentColor"><path d="M8 2.5a8 8 0 0 0-5.66 2.34l.95.95a6.66 6.66 0 0 1 9.42 0l.95-.95A8 8 0 0 0 8 2.5z"/></svg><svg viewBox="0 0 24 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2.5" stroke="currentColor" opacity="0.5"/><rect x="2" y="2" width="17" height="7" rx="1.5" fill="currentColor"/></svg></div></div>
+      <div class="s-res">
+        <div class="rs-eyebrow">YOUR · ARRANGEMENTS</div>
+        <div class="rs-h">Your <em>stay</em>,<br>at a glance</div>
+        <div class="rs-card">
+          <div class="name">La Vague d'Or</div>
+          <div class="by">DINNER · TABLE FOR TWO · QUIET</div>
+          <div class="when">
+            <div><div class="l">WHEN</div><div class="v">Tonight, 20:30</div></div>
+            <div><div class="l">CONFIRMATION</div><div class="v">SVT-2840</div></div>
+          </div>
+          <div class="actions">
+            <span>MODIFY</span>
+            <span>DIRECTIONS</span>
+          </div>
+        </div>
+        <div class="rs-card">
+          <div class="name">Spa · Hot stone massage</div>
+          <div class="by">1H 30M · OUVERTURE PACKAGE</div>
+          <div class="when">
+            <div><div class="l">WHEN</div><div class="v">Tomorrow, 10:00</div></div>
+            <div><div class="l">THERAPIST</div><div class="v">Sylvie</div></div>
+          </div>
+          <div class="actions">
+            <span>MODIFY</span>
+            <span>DETAILS</span>
+          </div>
+        </div>
+        <div class="rs-card">
+          <div class="name">Private boat charter</div>
+          <div class="by">HALF-DAY · CAPTAIN MICHEL</div>
+          <div class="when">
+            <div><div class="l">WHEN</div><div class="v">Saturday, 14:00</div></div>
+            <div><div class="l">DOCK</div><div class="v">Quai N°4</div></div>
+          </div>
+          <div class="actions">
+            <span>MODIFY</span>
+            <span>DETAILS</span>
+          </div>
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div></div><div class="phone-caption">04 · BOOKINGS</div></div>
+
+    <!-- Phone 5 -->
+    <div class="phone-wrap"><div class="phone"><div class="phone-screen">
+      <div class="status-bar"><span>9:41</span><div class="status-icons"><span class="status-bar-signal"><i></i><i></i><i></i><i></i></span><svg viewBox="0 0 16 11" fill="currentColor"><path d="M8 2.5a8 8 0 0 0-5.66 2.34l.95.95a6.66 6.66 0 0 1 9.42 0l.95-.95A8 8 0 0 0 8 2.5z"/></svg><svg viewBox="0 0 24 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2.5" stroke="currentColor" opacity="0.5"/><rect x="2" y="2" width="17" height="7" rx="1.5" fill="currentColor"/></svg></div></div>
+      <div class="s-key">
+        <div class="k-eyebrow">DIGITAL KEY · ACTIVE</div>
+        <div class="k-h">Your <em>room</em></div>
+        <div class="k-card">
+          <div class="l">Hôtel Saint-Tropez</div>
+          <div class="num">412</div>
+          <div class="suite">JARDIN SUITE · MAGNOLIA</div>
+          <div class="name">Ms. Lena Voss</div>
+        </div>
+        <div class="k-tap">TAP TO UNLOCK · HOLD NEAR DOOR</div>
+        <div class="k-info">Valid until check-out · April 18, 11:00 AM<br>For assistance, please contact the concierge.</div>
+      </div>
+      <div class="home-indicator"></div>
+    </div></div><div class="phone-caption">05 · KEY</div></div>
+
+  </div></div>
+
+  <footer class="showcase-footer">
+    <div>
+      <div class="footer-block-label">Concept</div>
+      A digital concierge for luxury hospitality — champagne gold accents on a deep emerald palette, Cormorant Garamond for the human warmth, and a tone that treats every request like a quiet courtesy.
     </div>
-
-    <div id="content">
-      <h1 id="idle-title">Reaction Time Test</h1>
-      <div id="main-text">Wait for green</div>
-      <div id="retrieving-text">Retrieving data...</div>
-      <div id="sub-text">When the red box turns green,<br>tap as quickly as you can.</div>
-      <p class="sr-only">反応速度テスト（Reaction Time Test）は、画面が緑色に変わった瞬間にタップして反応速度・リアクションタイムを測定する無料のオンラインツールです。ハイスコアと平均反応時間を記録し、結果をSNSでシェアできます。</p>
-    </div>
-
-    <div id="stats">
-      <div class="stat-card">
-        <div class="stat-label">ハイスコア</div>
-        <div class="stat-value" id="best-val">–</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">自己平均</div>
-        <div class="stat-value" id="avg-val">–</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">全世界平均</div>
-        <div class="stat-value" id="world-val">250 ms</div>
+    <div>
+      <div class="footer-block-label">Palette</div>
+      <div class="swatches">
+        <span class="swatch" style="background:#0f1a16;border:1px solid #2a3a32"></span>
+        <span class="swatch" style="background:#c4a273"></span>
+        <span class="swatch" style="background:#2c5a48"></span>
+        <span class="swatch" style="background:#f5ecd3"></span>
       </div>
     </div>
-
-    <div id="ios-install-hint">
-      <span id="ios-install-hint-text" aria-hidden="true"></span>
-      <span class="sr-only">共有アイコンから「ホーム画面に追加」でアプリのように使えます</span>
-      <button id="ios-install-hint-close" type="button" aria-label="閉じる">×</button>
+    <div>
+      <div class="footer-block-label">Typography</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic">Cormorant · Italic</div>
+      <div style="font-family:'Inter',sans-serif;font-size:12px;opacity:0.65">Inter · UI</div>
     </div>
-
-    <div id="best-record-flash" aria-hidden="true">
-      <span class="record-flash-text">★ NEW RECORD! ★</span>
-    </div>
-  </div>
-
-  <section id="seo-content" aria-labelledby="seo-heading">
-    <div class="seo-inner">
-      <h2 id="seo-heading" class="reveal">反応速度テスト（Reaction Time Test）とは</h2>
-      <p class="reveal">反応速度テストは、画面の色が変化した瞬間にできるだけ早くタップ（クリック）し、目や耳からの刺激に対して体がどれくらい速く反応できるかを測る無料のオンラインツールです。専用アプリのインストールは不要で、スマートフォン・タブレット・パソコンのブラウザから今すぐ測定できます。測定結果はハイスコアや自己平均としてブラウザ内に保存され、次回アクセス時にも記録を引き継いで確認できます。</p>
-      <p>反応速度（リアクションタイム）は、スポーツや格闘技、eスポーツ、車の運転など、瞬時の判断力が求められる場面で重要な能力の一つとされています。定期的に測定することで、自分の反応速度の変化や体調・集中力の目安を把握するのにも役立ちます。</p>
-
-      <h2 class="reveal">遊び方（3ステップ）</h2>
-      <ol class="reveal">
-        <li><strong>画面をタップして開始：</strong>青い画面のどこでもよいのでタップまたはクリックすると測定が始まります。</li>
-        <li><strong>赤い画面で待つ：</strong>画面が赤色の間はまだ反応するタイミングではありません。フライング（早すぎるタップ）に注意しながら待ちましょう。</li>
-        <li><strong>緑色に変わったら即タップ：</strong>画面が緑色に切り替わった瞬間、できるだけ早くタップしてください。その反応時間がミリ秒（ms）単位で表示されます。</li>
-      </ol>
-      <p>赤色のうちにタップしてしまうと「Too soon!（早すぎます）」と表示され、その回はやり直しになります。焦らず、緑色に変わってからタップするのがコツです。</p>
-
-      <div class="ad-slot">
-        <div class="ad-slot-label">スポンサーリンク</div>
-        <ins class="adsbygoogle"
-             style="display:block"
-             data-ad-client="ca-pub-5861952627500956"
-             data-ad-slot="1389859431"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-      </div>
-
-      <h2 class="reveal">反応速度の目安</h2>
-      <p class="reveal">一般的に、視覚的な刺激に対する人間の平均的な反応速度はおよそ200〜250ミリ秒程度とされています。以下は目安の一例です。</p>
-      <table id="seo-table" class="reveal reveal-scale">
-        <thead>
-          <tr><th>反応速度</th><th>目安の評価</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>150ms以下</td><td>非常に速い（トップアスリート・プロゲーマー水準）</td></tr>
-          <tr><td>150〜200ms</td><td>速い</td></tr>
-          <tr><td>200〜250ms</td><td>平均的</td></tr>
-          <tr><td>250〜300ms</td><td>やや遅め</td></tr>
-          <tr><td>300ms以上</td><td>集中力の低下や疲労の可能性あり</td></tr>
-        </tbody>
-      </table>
-      <p>数値はあくまで目安であり、年齢・体調・使用しているデバイスやディスプレイの反応速度（遅延）によっても結果は変動します。同じ条件で複数回測定し、平均値で比較するのがおすすめです。</p>
-
-      <h2 class="reveal">反応速度を上げるコツ</h2>
-      <h3 class="reveal">1. 変化した「後」に反応する意識</h3>
-      <p class="reveal">画面の色の変化そのものを予測しようとするのではない、実際に緑に変化したのを確認した「後」に、指を動かす意識を持つことで安定したタイムが出やすくなります。</p>
-      
-      <h3 class="reveal">2. リラックスして構える</h3>
-      <p class="reveal">肩や指に過度な力が入っていると、かえって初動が遅れてしまいます。リラックスした状態で構えるのがコツです。</p>
-      
-      <h3 class="reveal">3. ベストな体調のときに測定する</h3>
-      <p class="reveal">睡眠不足や疲労が溜まっている時は、脳の処理速度が落ちるため反応速度も著しく低下します。体調の良いタイミングを意識して測定してみましょう。</p>
-
-      <h2 class="reveal">よくある質問</h2>
-      <div class="faq-item reveal" style="transition-delay:0s">
-        <h3>反応速度テストは無料で使えますか？</h3>
-        <p>はい、完全無料でご利用いただけます。会員登録やアプリのインストールも不要です。</p>
-      </div>
-      <div class="faq-item reveal" style="transition-delay:0.1s">
-        <h3>測定結果はどこに保存されますか？</h3>
-        <p>ハイスコアや試行回数などの記録は、お使いのブラウザ内（ローカルストレージ）にのみ保存されます。外部サーバーへの送信は行われません。</p>
-      </div>
-      <div class="faq-item reveal" style="transition-delay:0.2s">
-        <h3>スマートフォンでも使えますか？</h3>
-        <p>はい、スマートフォン・タブレット・パソコンのいずれのブラウザからもご利用いただけます。ホーム画面に追加すればアプリのように起動することも可能です。</p>
-      </div>
-      <div class="faq-item reveal" style="transition-delay:0.3s">
-        <h3>結果が毎回ばらつくのはなぜですか？</h3>
-        <p>反応速度は体調や集中力、デバイスの表示遅延などによって変動します。複数回測定し、平均値で比較することをおすすめします。</p>
-        
-        <h4>環境による遅延の主な原因</h4>
-        <ul>
-          <li><strong>ディスプレイの応答速度：</strong>リフレッシュレート（60Hz/144Hzなど）により表示ラグが変化します。</li>
-          <li><strong>接続機器の遅延：</strong>ワイヤレスマウスやBluetooth製品などの使用により、ミリ秒単位の遅延が発生する場合があります。</li>
-        </ul>
-      </div>
-
-      <div class="ad-slot">
-        <div class="ad-slot-label">スポンサーリンク</div>
-        <ins class="adsbygoogle"
-             style="display:block"
-             data-ad-client="ca-pub-5861952627500956"
-             data-ad-slot="1389859431"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-      </div>
-    </div>
-  </section>
-
-  <div id="site-copyright">© 2026 SunnyJPN. All Rights Reserved.</div>
-
-  <footer id="account-footer">
-    <div id="account-footer-inner">
-      <span id="account-footer-user"></span>
-      <button id="logout-btn" type="button" style="display:none;">ログアウト</button>
+    <div>
+      <div class="footer-block-label">Use Cases</div>
+      Hotels<br>Hospitality<br>Concierge Services<br>Luxury Travel
     </div>
   </footer>
 
-  <div id="login-splash" aria-hidden="true">
-    <div class="login-splash-card">
-      <p class="login-splash-title">記録を、失わない。</p>
-      <p class="login-splash-tagline">Googleでログインすると、ハイスコアをどの端末からでも引き継げます。</p>
-      <button id="login-splash-google-btn" type="button" class="login-splash-google-btn">Googleで続ける</button>
-      <button id="login-splash-skip" type="button" class="login-splash-skip">あとで（このまま続ける）</button>
-    </div>
-  </div>
-
-<script>
-(function () {
-  const STORAGE_KEY = 'reaction-time-test-v3';
-  const WORLD_AVERAGE = 250;
-
-  const COLOR_IDLE = '#1c3a2e';
-  const COLOR_WAIT = '#a8323f';
-  const COLOR_GO = '#4cb87d';
-  const goSound = new Audio('go-sound.mp3');
-  goSound.preload = 'auto';
-  goSound.volume = 1.0; // この効果音のみ最大音量で再生する（音源自体も音量を上げ済み）
-  const resultSound = new Audio('result-sound.mp3');
-  resultSound.preload = 'auto';
-  resultSound.volume = 0.85;
-  const COLOR_RESULT = '#1c3a2e';
-  const COLOR_TOOSOON = '#1c3a2e';
-
-  const box = document.getElementById('box');
-  const idleTitle = document.getElementById('idle-title');
-  const mainText = document.getElementById('main-text');
-  const retrievingText = document.getElementById('retrieving-text');
-  const subText = document.getElementById('sub-text');
-  const bestVal = document.getElementById('best-val');
-  const worldVal = document.getElementById('world-val');
-  const avgVal = document.getElementById('avg-val');
-  const shareX = document.getElementById('share-x');
-  const shareNative = document.getElementById('share-native');
-  const installBtn = document.getElementById('install-btn');
-  const iosHint = document.getElementById('ios-install-hint');
-  const iosHintClose = document.getElementById('ios-install-hint-close');
-  const bestRecordFlash = document.getElementById('best-record-flash');
-
-  const RECENT_HISTORY_MAX = 5;
-  const MIN_REACTION_MS = 80;
-  const MAX_REACTION_MS = 3000;
-  const ROUND_EARLY_TOLERANCE_MS = 24;
-  const SUSPICIOUS_LIMIT = 3;
-
-  let integrityState = {
-    cloudSyncLocked: false,
-    suspiciousAttempts: 0,
-    lastReason: ''
-  };
-  let activeRound = null;
-
-  function createRoundNonce() {
-    try {
-      const buf = new Uint32Array(2);
-      crypto.getRandomValues(buf);
-      return Array.from(buf).map(function (v) { return v.toString(36); }).join('');
-    } catch (e) {
-      return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-    }
-  }
-
-  function beginIntegrityRound(delay) {
-    const round = {
-      id: createRoundNonce(),
-      armedAt: performance.now(),
-      scheduledDelay: delay,
-      readyAt: 0,
-      hidden: document.hidden,
-      used: false,
-      roundId: null,
-      roundIdPromise: null
-    };
-    activeRound = round;
-    // サーバーにラウンド開始を申告し、ワンタイムトークンを発行してもらう。
-    // これが「本当にプレイしたか」をサーバー側で検証するための土台になる
-    // （Cloud Functions 側の submitScore が、このトークンの発行時刻からの
-    //   経過時間を見て、待機・反応の過程を経ずに結果だけ送る攻撃を弾く）。
-    round.roundIdPromise = (window.RT && window.RT.startRound ? window.RT.startRound() : Promise.resolve(null))
-      .then(function (id) { round.roundId = id; return id; })
-      .catch(function () { return null; });
-  }
-
-  function markRoundReady() {
-    if (activeRound) activeRound.readyAt = performance.now();
-  }
-
-  function flagSuspicious(reason) {
-    integrityState.suspiciousAttempts += 1;
-    integrityState.lastReason = reason;
-    if (integrityState.suspiciousAttempts >= SUSPICIOUS_LIMIT) {
-      integrityState.cloudSyncLocked = true;
-    }
-    return { ok: false, reason: reason };
-  }
-
-  function buildAttemptEvent(ms) {
-    return {
-      id: createRoundNonce() + '-' + Date.now().toString(36),
-      ms: Math.round(ms),
-      createdAt: Date.now()
-    };
-  }
-
-  function validateRoundResult(ms, now) {
-    if (integrityState.cloudSyncLocked) {
-      return flagSuspicious('不審な入力が続いたため、クラウド記録を一時停止しています');
-    }
-    if (!activeRound || activeRound.used) {
-      return flagSuspicious('ラウンド状態の整合性が取れませんでした');
-    }
-    activeRound.used = true;
-    if (!Number.isFinite(ms) || ms < MIN_REACTION_MS || ms > MAX_REACTION_MS) {
-      return flagSuspicious('異常に速い、または無効な反応時間を検出しました');
-    }
-    if (!activeRound.readyAt) {
-      return flagSuspicious('開始トリガーが不正です');
-    }
-    const elapsedSinceArmed = now - activeRound.armedAt;
-    if (elapsedSinceArmed + ROUND_EARLY_TOLERANCE_MS < activeRound.scheduledDelay) {
-      return flagSuspicious('待機時間の短縮が検出されました');
-    }
-    if (activeRound.hidden || document.hidden) {
-      return flagSuspicious('バックグラウンド状態の試行は記録対象外です');
-    }
-    return { ok: true, event: buildAttemptEvent(ms), round: activeRound };
-  }
-
-  document.addEventListener('visibilitychange', function () {
-    if (activeRound && (state === 'waiting' || state === 'ready') && document.hidden) {
-      activeRound.hidden = true;
-    }
-  });
-
-  const labelState = {
-    actionWord: 'Click',
-    actionWordLower: 'click',
-    anywhereWord: 'Click'
-  };
-
-  let state = 'idle';
-  let startTime = 0;
-  let waitTimer = null;
-  let retrievingTimer = null;
-  let lastResult = null;
-  let bestScore = null;
-  let attemptCount = 0;
-  let totalTimeSum = 0;
-  let recentHistory = [];
-
-  function getActionPromptText() {
-    return labelState.anywhereWord + ' anywhere to start.';
-  }
-
-  function getWaitInstructionHtml() {
-    return 'When the red box turns green,<br>' + labelState.actionWordLower + ' as quickly as you can.<br><br>' + getActionPromptText();
-  }
-
-  function getRetryText() {
-    return labelState.anywhereWord + ' to try again.';
-  }
-
-  function getContinueText() {
-    return labelState.anywhereWord + ' to keep going';
-  }
-
-  function applyInteractionLabels() {
-    labelState.actionWord = 'Click';
-    labelState.actionWordLower = 'click';
-    labelState.anywhereWord = 'Click';
-
-    if (state === 'idle') {
-      mainText.textContent = 'Wait for green';
-      subText.innerHTML = getWaitInstructionHtml();
-    } else if (state === 'waiting') {
-      mainText.textContent = 'Wait for green';
-    } else if (state === 'ready') {
-      mainText.textContent = labelState.actionWord + '!';
-    } else if (state === 'toosoon') {
-      subText.textContent = getRetryText();
-    } else if (state === 'result') {
-      subText.textContent = getContinueText();
-    }
-  }
-
-  function detectDeviceProfileSync() {
-    const ua = navigator.userAgent || '';
-    const width = window.innerWidth || screen.width || 0;
-    const height = window.innerHeight || screen.height || 0;
-    const shortestSide = Math.min(width, height);
-    const hasTouch = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches;
-    const isIPad = /iPad/.test(ua) || (/Macintosh/.test(ua) && hasTouch);
-    const isAndroid = /Android/i.test(ua);
-    const isIPhone = /iPhone/i.test(ua);
-    const isMobile = isIPhone || (/Android/i.test(ua) && /Mobile/i.test(ua)) || shortestSide < 768;
-    const isTablet = isIPad || (isAndroid && !/Mobile/i.test(ua)) || (!isMobile && shortestSide >= 768 && shortestSide <= 1024 && hasTouch);
-    const deviceType = isTablet ? 'tablet' : (isMobile ? 'mobile' : 'desktop');
-    const isLandscapeShort = width > height && height < 520;
-
-    return {
-      deviceType,
-      hasTouch,
-      isLandscapeShort,
-      platform: isIPhone || isIPad ? 'ios' : (isAndroid ? 'android' : (/Mac/i.test(ua) ? 'mac' : (/Windows/i.test(ua) ? 'windows' : 'other'))),
-      model: ''
-    };
-  }
-
-  async function enrichDeviceProfile(profile) {
-    if (!navigator.userAgentData || typeof navigator.userAgentData.getHighEntropyValues !== 'function') {
-      return profile;
-    }
-
-    try {
-      const hints = await navigator.userAgentData.getHighEntropyValues(['model', 'platform']);
-      if (hints && typeof hints.model === 'string' && hints.model.trim()) {
-        profile.model = hints.model.trim();
-      }
-      if (hints && typeof hints.platform === 'string' && hints.platform.trim()) {
-        profile.platform = hints.platform.trim().toLowerCase();
-      }
-    } catch (e) {}
-
-    return profile;
-  }
-
-  function applyDeviceProfile(profile) {
-    document.body.classList.remove(
-      'device-mobile',
-      'device-tablet',
-      'device-desktop',
-      'is-touch',
-      'is-non-touch',
-      'platform-ios',
-      'platform-android',
-      'platform-mac',
-      'platform-windows',
-      'landscape-short'
-    );
-
-    document.body.classList.add('device-' + profile.deviceType);
-    document.body.classList.add(profile.hasTouch ? 'is-touch' : 'is-non-touch');
-    if (profile.platform) {
-      document.body.classList.add('platform-' + profile.platform.replace(/[^a-z0-9-]/g, ''));
-    }
-    if (profile.isLandscapeShort) {
-      document.body.classList.add('landscape-short');
-    }
-
-    document.body.dataset.deviceType = profile.deviceType;
-    document.body.dataset.devicePlatform = profile.platform || 'unknown';
-    document.body.dataset.deviceModel = profile.model || 'unknown';
-
-    applyInteractionLabels();
-  }
-
-  function updateAdaptiveUi() {
-    const profile = detectDeviceProfileSync();
-    applyDeviceProfile(profile);
-    enrichDeviceProfile(profile).then(applyDeviceProfile);
-  }
-
-  function loadStats() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const data = JSON.parse(raw);
-      if (typeof data.bestScore === 'number') bestScore = data.bestScore;
-      if (typeof data.attemptCount === 'number') attemptCount = data.attemptCount;
-      if (typeof data.totalTimeSum === 'number') totalTimeSum = data.totalTimeSum;
-      if (Array.isArray(data.recentHistory)) recentHistory = data.recentHistory.slice(-RECENT_HISTORY_MAX);
-    } catch (e) {}
-  }
-
-  function saveStats(meta) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        bestScore,
-        attemptCount,
-        totalTimeSum,
-        recentHistory
-      }));
-    } catch (e) {}
-  }
-
-  function renderStats() {
-    bestVal.textContent = bestScore === null ? '–' : bestScore + ' ms';
-    worldVal.textContent = WORLD_AVERAGE + ' ms';
-    avgVal.textContent = attemptCount === 0 ? '–' : Math.round(totalTimeSum / attemptCount) + ' ms';
-
-    const accBest = document.getElementById('account-stat-best');
-    const accAvg = document.getElementById('account-stat-avg');
-    const accGames = document.getElementById('account-stat-games');
-    if (accBest) accBest.textContent = bestScore === null ? '–' : bestScore + 'ms';
-    if (accAvg) accAvg.textContent = attemptCount === 0 ? '–' : Math.round(totalTimeSum / attemptCount) + 'ms';
-    if (accGames) accGames.textContent = attemptCount === 0 ? '–' : String(attemptCount);
-  }
-
-  // Firebase側から呼ばれる：クラウドの記録をローカル状態へ反映する
-  window.RT = window.RT || {};
-  window.RT.getStats = function () {
-    return {
-      bestScore,
-      attemptCount,
-      totalTimeSum,
-      recentHistory,
-      cloudSyncLocked: integrityState.cloudSyncLocked
-    };
-  };
-  window.RT.applyRemoteStats = function (remote) {
-    if (!remote) return;
-    if (typeof remote.bestScore === 'number') bestScore = remote.bestScore;
-    if (typeof remote.attemptCount === 'number') attemptCount = remote.attemptCount;
-    if (typeof remote.totalTimeSum === 'number') totalTimeSum = remote.totalTimeSum;
-    if (Array.isArray(remote.recentHistory)) recentHistory = remote.recentHistory.slice(-RECENT_HISTORY_MAX);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ bestScore, attemptCount, totalTimeSum, recentHistory }));
-    } catch (e) {}
-    renderStats();
-  };
-
-  function vibrateFeedback(pattern) {
-    if (navigator.vibrate) {
-      try { navigator.vibrate(pattern); } catch (e) {}
-    }
-  }
-
-  function setIdleScreen() {
-    state = 'idle';
-    clearTimeout(waitTimer);
-    clearTimeout(retrievingTimer);
-    activeRound = null;
-    box.style.backgroundColor = COLOR_IDLE;
-    idleTitle.style.display = 'block';
-    mainText.style.display = 'none';
-    if (retrievingText) retrievingText.style.display = 'none';
-    subText.style.display = 'block';
-    subText.innerHTML = getWaitInstructionHtml();
-  }
-
-  function setWaitingScreen() {
-    state = 'waiting';
-    clearTimeout(retrievingTimer);
-    if (retrievingText) retrievingText.style.display = 'none';
-    box.style.backgroundColor = COLOR_WAIT;
-    idleTitle.style.display = 'none';
-    mainText.style.display = 'block';
-    mainText.textContent = 'Wait for green';
-    subText.style.display = 'none';
-
-    const delay = 2000 + Math.random() * 3000;
-    beginIntegrityRound(delay);
-    waitTimer = setTimeout(setReadyScreen, delay);
-  }
-
-  function setReadyScreen() {
-    state = 'ready';
-    box.style.backgroundColor = COLOR_GO;
-    mainText.textContent = labelState.actionWord + '!';
-    subText.style.display = 'none';
-    startTime = performance.now();
-    markRoundReady();
-    vibrateFeedback(40);
-    try {
-      goSound.currentTime = 0;
-      goSound.play().catch(function () {});
-    } catch (e) {}
-  }
-
-  function setTooSoonScreen() {
-    state = 'toosoon';
-    clearTimeout(waitTimer);
-    clearTimeout(retrievingTimer);
-    if (retrievingText) retrievingText.style.display = 'none';
-    if (activeRound) activeRound.used = true;
-    box.style.backgroundColor = COLOR_TOOSOON;
-    idleTitle.style.display = 'none';
-    mainText.style.display = 'block';
-    mainText.textContent = 'Too soon!';
-    subText.style.display = 'block';
-    subText.textContent = getRetryText();
-    vibrateFeedback([15, 40, 15]);
-  }
-
-  // タップ直後は0.5〜0.75秒「Retrieving data...」を表示してから結果画面へ遷移する。
-  // これにより、前の効果音（開始音）が鳴り終わってから結果音を再生でき、音の重なりを防止する。
-  const RETRIEVING_MIN_MS = 500;
-  const RETRIEVING_MAX_MS = 750;
-
-  function setRetrievingScreen(ms, verdict) {
-    state = 'retrieving';
-    clearTimeout(waitTimer);
-    clearTimeout(retrievingTimer);
-    box.style.backgroundColor = COLOR_RESULT;
-    idleTitle.style.display = 'none';
-    mainText.style.display = 'none';
-    subText.style.display = 'none';
-    if (retrievingText) retrievingText.style.display = 'block';
-
-    const delay = RETRIEVING_MIN_MS + Math.random() * (RETRIEVING_MAX_MS - RETRIEVING_MIN_MS);
-    retrievingTimer = setTimeout(function () {
-      if (retrievingText) retrievingText.style.display = 'none';
-      setResultScreen(ms, verdict);
-    }, delay);
-  }
-
-  function setResultScreen(ms, verdict) {
-    state = 'result';
-    lastResult = ms;
-
-    const accepted = !verdict || verdict.ok !== false;
-    let isNewBest = false;
-
-    if (accepted) {
-      attemptCount += 1;
-      totalTimeSum += ms;
-      if (bestScore === null || ms < bestScore) {
-        bestScore = ms;
-        isNewBest = true;
-      }
-      recentHistory.push(ms);
-      if (recentHistory.length > RECENT_HISTORY_MAX) {
-        recentHistory = recentHistory.slice(-RECENT_HISTORY_MAX);
-      }
-      saveStats({ latestEvent: verdict && verdict.event ? verdict.event : null, isNewBest: isNewBest });
-      renderStats();
-
-      // スコアの送信はサーバー発行のラウンドトークンとセットで行う。
-      // トークンが無い（発行に失敗・未ログイン等）場合はローカル記録のみに留める。
-      if (verdict && verdict.round) {
-        (function (round) {
-          Promise.resolve(round.roundIdPromise).then(function () {
-            const roundId = round.roundId;
-            if (roundId && window.RT && window.RT.submitScore) {
-              window.RT.submitScore(roundId, ms);
-            }
-          });
-        })(verdict.round);
-      }
-    }
-
-    vibrateFeedback(accepted && isNewBest ? [30, 40, 30] : 25);
-
-    if (accepted) {
-      try {
-        resultSound.currentTime = 0;
-        resultSound.play().catch(function () {});
-      } catch (e) {}
-    }
-
-    box.style.backgroundColor = COLOR_RESULT;
-    idleTitle.style.display = 'none';
-    mainText.style.display = 'block';
-    mainText.textContent = ms + ' ms';
-    subText.style.display = 'block';
-    subText.textContent = accepted
-      ? getContinueText()
-      : ('参考値（記録対象外）: ' + (verdict && verdict.reason ? verdict.reason : '不審な入力を検出') + ' / ' + getContinueText());
-
-    mainText.classList.remove('pulse-ms');
-    void mainText.offsetWidth;
-    mainText.classList.add('pulse-ms');
-
-    if (accepted && isNewBest && bestRecordFlash) {
-      bestRecordFlash.classList.remove('show');
-      void bestRecordFlash.offsetWidth;
-      bestRecordFlash.classList.add('show');
-    }
-  }
-
-  function shareText() {
-    if (lastResult !== null) {
-      return 'Reaction Time Testで ' + lastResult + ' ms を記録。ハイスコアは ' + (bestScore === null ? '–' : bestScore + ' ms') + '。';
-    }
-    return 'Reaction Time Testに挑戦してみよう。';
-  }
-
-  // 修正: ローカル変数名の衝突を避けるため、引数名を event から e に変更
-  function shareUrl() {
-    return window.location.href;
-  }
-
-  function openXShare() {
-    const text = encodeURIComponent(shareText());
-    const url = encodeURIComponent(shareUrl());
-    window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank', 'noopener,noreferrer');
-  }
-
-  async function openNativeShare() {
-    if (!navigator.share) return;
-    try {
-      await navigator.share({
-        text: shareText(),
-        url: shareUrl()
-      });
-    } catch (e) {}
-  }
-
-  let audioPrimed = false;
-
-  // 初回タップ（ユーザー操作）のタイミングで無音に近い状態で一度再生しておくことで、
-  // ブラウザ側のデコード準備を済ませ、実際の「Go!」再生時の遅延を減らす
-  function primeAudioOnce() {
-    if (audioPrimed) return;
-    audioPrimed = true;
-    [goSound, resultSound].forEach(function (audio) {
-      try {
-        const originalVolume = audio.volume;
-        audio.volume = 0;
-        const p = audio.play();
-        if (p && typeof p.then === 'function') {
-          p.then(function () {
-            audio.pause();
-            audio.currentTime = 0;
-            audio.volume = originalVolume;
-          }).catch(function () {
-            audio.volume = originalVolume;
-          });
-        } else {
-          audio.pause();
-          audio.currentTime = 0;
-          audio.volume = originalVolume;
-        }
-      } catch (e) {}
-    });
-  }
-
-  function onGameTap(event) {
-    // アカウントパネルや共有バーなど、ゲーム以外のUI操作はゲーム側に奪わない
-    if (event && event.target && event.target.closest) {
-      const uiSelector = '#account-toggle-btn, #account-panel, #share-bar, #ios-install-hint';
-      if (event.target.closest(uiSelector)) return;
-    }
-
-    if (event) event.preventDefault();
-
-    primeAudioOnce();
-
-    // 結果集計中（Retrieving data...表示中）はタップを無視する
-    if (state === 'retrieving') return;
-
-    if (state === 'idle' || state === 'result' || state === 'toosoon') {
-      setWaitingScreen();
-      return;
-    }
-
-    if (state === 'waiting') {
-      setTooSoonScreen();
-      return;
-    }
-
-    if (state === 'ready') {
-      const now = performance.now();
-      const ms = Math.round(now - startTime);
-      const verdict = validateRoundResult(ms, now);
-      setRetrievingScreen(ms, verdict);
-    }
-  }
-
-  if (shareX) {
-    shareX.addEventListener('click', function (event) {
-      event.stopPropagation();
-      openXShare();
-    });
-  }
-
-  if (navigator.share && shareNative) {
-    shareNative.style.display = '';
-    shareNative.addEventListener('click', function (event) {
-      event.stopPropagation();
-      openNativeShare();
-    });
-  }
-
-  const INSTALL_HINT_DISMISS_KEY = 'reaction-time-test-ios-hint-dismissed';
-  const IOS_HINT_TEXT = '共有アイコンから「ホーム画面に追加」でアプリのように使えます';
-  const iosHintText = document.getElementById('ios-install-hint-text');
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  if (iosHintText) {
-    const chars = Array.from(IOS_HINT_TEXT);
-    const baseDelay = 0.03;
-    iosHintText.innerHTML = chars.map(function (ch, i) {
-      const display = ch === ' ' ? '&nbsp;' : ch;
-      return '<span class="hint-char" style="--char-delay:' + (i * baseDelay).toFixed(3) + 's">' + display + '</span>';
-    }).join('');
-    if (iosHintClose) {
-      iosHintClose.style.setProperty('--close-delay', (chars.length * baseDelay + 0.2).toFixed(3) + 's');
-    }
-  }
-
-  let deferredInstallPrompt = null;
-
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-    || window.navigator.standalone === true;
-
-  window.addEventListener('beforeinstallprompt', function (event) {
-    event.preventDefault();
-    deferredInstallPrompt = event;
-    if (!isStandalone) {
-      installBtn.style.display = '';
-    }
-  });
-
-  installBtn.addEventListener('click', function (event) {
-    event.stopPropagation();
-    if (!deferredInstallPrompt) return;
-    installBtn.style.display = 'none';
-    deferredInstallPrompt.prompt();
-    deferredInstallPrompt.userChoice.finally(function () {
-      deferredInstallPrompt = null;
-    });
-  });
-
-  window.addEventListener('appinstalled', function () {
-    installBtn.style.display = 'none';
-    deferredInstallPrompt = null;
-  });
-
-  // ボタンのクリック波紋（Ripple）
-  document.querySelectorAll('.share-btn').forEach(function (btn) {
-    btn.addEventListener('click', function (e) {
-      const rect = btn.getBoundingClientRect();
-      const size = Math.max(rect.width, rect.height);
-      const ripple = document.createElement('span');
-      ripple.className = 'ripple';
-      ripple.style.width = ripple.style.height = size + 'px';
-      const x = (e.clientX !== undefined ? e.clientX - rect.left : rect.width / 2) - size / 2;
-      const y = (e.clientY !== undefined ? e.clientY - rect.top : rect.height / 2) - size / 2;
-      ripple.style.left = x + 'px';
-      ripple.style.top = y + 'px';
-      btn.appendChild(ripple);
-      ripple.addEventListener('animationend', function () { ripple.remove(); });
-    });
-  });
-
-  // マウス追従ライト（PC・非タッチ端末のみ）
-  if (window.matchMedia('(pointer: fine)').matches && !prefersReducedMotion) {
-    box.addEventListener('pointerenter', function () { box.classList.add('has-light'); });
-    box.addEventListener('pointerleave', function () { box.classList.remove('has-light'); });
-    box.addEventListener('pointermove', function (e) {
-      const rect = box.getBoundingClientRect();
-      const mx = ((e.clientX - rect.left) / rect.width) * 100;
-      const my = ((e.clientY - rect.top) / rect.height) * 100;
-      box.style.setProperty('--mx', mx + '%');
-      box.style.setProperty('--my', my + '%');
-    });
-  }
-
-  (function maybeShowIosHint() {
-    const ua = navigator.userAgent || '';
-    const isIosDevice = /iPad|iPhone|iPod/.test(ua)
-      || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-    const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
-
-    if (!isIosDevice || !isSafari || isStandalone) return;
-
-    let dismissed = false;
-    try { dismissed = localStorage.getItem(INSTALL_HINT_DISMISS_KEY) === '1'; } catch (e) {}
-    if (dismissed) return;
-
-    iosHint.classList.add('is-visible');
-  })();
-
-  iosHintClose.addEventListener('click', function (event) {
-    event.stopPropagation();
-    try { localStorage.setItem(INSTALL_HINT_DISMISS_KEY, '1'); } catch (e) {}
-
-    if (prefersReducedMotion) {
-      iosHint.classList.remove('is-visible');
-      iosHint.style.display = 'none';
-      return;
-    }
-
-    iosHint.classList.remove('is-visible');
-    iosHint.classList.add('is-hiding');
-    iosHint.addEventListener('animationend', function onHideEnd() {
-      iosHint.removeEventListener('animationend', onHideEnd);
-      iosHint.classList.remove('is-hiding');
-      iosHint.style.display = 'none';
-    }, { once: true });
-  });
-
-  box.addEventListener('pointerdown', onGameTap, { passive: false });
-
-  function animateCountUp(el, endText) {
-    if (!el) return;
-    const match = endText.match(/-?\d+/);
-    if (!match || prefersReducedMotion) {
-      el.textContent = endText;
-      return;
-    }
-    const end = parseInt(match[0], 10);
-    const suffix = endText.slice(match.index + match[0].length);
-    const prefix = endText.slice(0, match.index);
-    const duration = 800;
-    const startTs = performance.now();
-    function tick(now) {
-      const p = Math.min((now - startTs) / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      el.textContent = prefix + Math.round(end * eased) + suffix;
-      if (p < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }
-
-  // スクロール進捗バー
-  const scrollProgressEl = document.getElementById('scroll-progress');
-  function updateScrollProgress() {
-    if (!scrollProgressEl) return;
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const ratio = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-    scrollProgressEl.style.width = ratio + '%';
-  }
-  window.addEventListener('scroll', updateScrollProgress, { passive: true });
-
-  // スクロールで要素をフェードイン表示
-  const revealTargets = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window && !prefersReducedMotion) {
-    const revealObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          revealObserver.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-    revealTargets.forEach(function (el) { revealObserver.observe(el); });
-  } else {
-    revealTargets.forEach(function (el) { el.classList.add('is-visible'); });
-  }
-
-  loadStats();
-  renderStats();
-  animateCountUp(bestVal, bestVal.textContent);
-  animateCountUp(worldVal, worldVal.textContent);
-  animateCountUp(avgVal, avgVal.textContent);
-  updateAdaptiveUi();
-  setIdleScreen();
-  updateScrollProgress();
-
-  // ゲーム画面の初回表示アニメーション
-  requestAnimationFrame(function () {
-    box.classList.add('is-visible');
-  });
-
-  let resizeTimer = null;
-  window.addEventListener('resize', function () {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(updateAdaptiveUi, 120);
-  }, { passive: true });
-
-  window.addEventListener('orientationchange', function () {
-    setTimeout(updateAdaptiveUi, 180);
-  }, { passive: true });
-
-  if ('serviceWorker' in navigator) {
-    let swRefreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', function () {
-      if (swRefreshing) return;
-      swRefreshing = true;
-      window.location.reload();
-    });
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js').then(function (reg) {
-        // 既に新しいSWが待機中なら即座に有効化を促す
-        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-        reg.addEventListener('updatefound', function () {
-          const newWorker = reg.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener('statechange', function () {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              newWorker.postMessage({ type: 'SKIP_WAITING' });
-            }
-          });
-        });
-      }).catch(function () {});
-    });
-  }
-})();
-</script>
-
-<!-- ▼▼ Firebase: 匿名/Googleログイン＋自己記録のクラウド同期（第1段階） ▼▼ -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-  import {
-    getAuth,
-    signInAnonymously,
-    onAuthStateChanged,
-    signOut,
-    GoogleAuthProvider,
-    signInWithPopup,
-    linkWithPopup,
-    isSignInWithEmailLink,
-    signInWithEmailLink,
-    linkWithCredential,
-    EmailAuthProvider
-  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
-  import {
-    getFirestore,
-    doc,
-    getDoc,
-    setDoc,
-    deleteDoc,
-    collection,
-    getDocs,
-    runTransaction,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
-  import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
-  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-check.js";
-  import { getAnalytics, isSupported as analyticsIsSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDItQuV-iIkiZGMS4RGLC7phv6qqkp0gBM",
-    authDomain: "reaction-time-test-27e65.firebaseapp.com",
-    projectId: "reaction-time-test-27e65",
-    storageBucket: "reaction-time-test-27e65.firebasestorage.app",
-    messagingSenderId: "122036959627",
-    appId: "1:122036959627:web:afba50ad85085181cf178e",
-    measurementId: "G-XQNYGFCSWY"
-  };
-
-  const app = initializeApp(firebaseConfig);
-
-  // ▼ Firebase App Check（reCAPTCHA v3）
-  // Bot・スクリプトからの直接アクセスや、このアプリ以外からのAPI流用を減らすための検証。
-  // サイトキーは Firebase Console →「App Check」→ アプリを登録（reCAPTCHA v3）で発行したものに
-  // 差し替えること（下記はプレースホルダーのため、このままでは機能しない）。
-  // ローカル開発時は self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; を初期化前に設定すると
-  // デバッグトークンが発行され、Console側に登録すればApp Check有効時でも動作確認できる。
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_V3_SITE_KEY'),
-    isTokenAutoRefreshEnabled: true
-  });
-
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const functions = getFunctions(app);
-
-  analyticsIsSupported().then(function (supported) {
-    if (supported) getAnalytics(app);
-  }).catch(function () {});
-
-  let currentUid = null;
-  let isSyncing = false;
-  const RECENT_HISTORY_MAX_SYNC = 5;
-
-  function isPlausibleStats(s) {
-    if (!s) return false;
-    if (s.bestScore !== null && (typeof s.bestScore !== 'number' || s.bestScore < 50 || s.bestScore > 1000)) return false;
-    if (typeof s.attemptCount !== 'number' || s.attemptCount < 0 || s.attemptCount > 1000000) return false;
-    if (typeof s.totalTimeSum !== 'number' || s.totalTimeSum < 0) return false;
-    return true;
-  }
-
-  function normalizeStats(source) {
-    const s = source || {};
-    return {
-      bestScore: typeof s.bestScore === 'number' ? s.bestScore : null,
-      attemptCount: typeof s.attemptCount === 'number' ? s.attemptCount : 0,
-      totalTimeSum: typeof s.totalTimeSum === 'number' ? s.totalTimeSum : 0,
-      recentHistory: Array.isArray(s.recentHistory)
-        ? s.recentHistory.filter(function (n) { return typeof n === 'number'; }).slice(-RECENT_HISTORY_MAX_SYNC)
-        : []
-    };
-  }
-
-  // スコアの書き込みはクライアントから一切行わない（firestore.rulesでも禁止済み）。
-  // Cloud Functions（startRound / submitScore）だけが、
-  //   ・本当にプレイした痕跡があるか（サーバー時刻での経過時間チェック）
-  //   ・値が妥当な範囲か
-  //   ・連投していないか（5秒に1回まで）
-  //   ・同一値の連続送信（Bot疑い）でないか
-  // を検証したうえでユーザーのスコアを更新できる。
-  const startRoundCallable = httpsCallable(functions, 'startRound');
-  const submitScoreCallable = httpsCallable(functions, 'submitScore');
-
-  // ラウンド開始をサーバーへ申告し、ワンタイムトークンを発行してもらう
-  async function requestRoundToken() {
-    try {
-      const res = await startRoundCallable();
-      return (res && res.data && res.data.roundId) || null;
-    } catch (e) {
-      console.warn('[RT] ラウンド開始トークンの取得に失敗しました', e);
-      return null;
-    }
-  }
-
-  // ラウンドの結果をサーバーへ送信し、サーバー側で確定した記録をローカル表示へ反映する
-  async function submitRoundResult(roundId, ms) {
-    if (!roundId) return; // トークンが無い場合はクラウドへ送らない（ローカル記録のみ）
-    try {
-      const res = await submitScoreCallable({ roundId: roundId, ms: ms });
-      if (res && res.data && window.RT && window.RT.applyRemoteStats) {
-        window.RT.applyRemoteStats({
-          bestScore: res.data.bestScore,
-          attemptCount: res.data.attemptCount,
-          totalTimeSum: res.data.totalTimeSum
-        });
-      }
-    } catch (e) {
-      // レート制限・ラウンド期限切れ・不正な値などは静かに無視する
-      // （ローカル表示は既に更新済みなのでUX上の支障はない）
-      console.warn('[RT] スコア送信が拒否されました', (e && e.message) || e);
-    }
-  }
-
-  // ログイン時：クラウド側に既に記録があればローカル表示へ取り込む（読み取りのみ）。
-  // ログイン前にローカルだけでプレイした記録は、サーバー検証を経ていないため
-  // クラウドへは反映されない（ログイン後の新しいプレイ分から同期される）。
-  async function pullAndMerge(uid) {
-    isSyncing = true;
-    try {
-      const ref = doc(db, 'users', uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
-        const remote = normalizeStats(snap.data());
-        if (isPlausibleStats(remote) && window.RT && window.RT.applyRemoteStats) {
-          window.RT.applyRemoteStats(remote);
-        }
-      }
-    } catch (e) {
-      console.warn('[RT] Firestore読み込みに失敗しました', e);
-    } finally {
-      isSyncing = false;
-    }
-  }
-
-  window.RT = window.RT || {};
-  window.RT.startRound = requestRoundToken;
-  window.RT.submitScore = submitRoundResult;
-
-  // 匿名アカウントからGoogleアカウントへ、記録を引き継いだまま昇格させる
-  window.RT.signInWithGoogle = async function () {
-    const provider = new GoogleAuthProvider();
-    try {
-      if (auth.currentUser && auth.currentUser.isAnonymous) {
-        await linkWithPopup(auth.currentUser, provider);
-      } else {
-        await signInWithPopup(auth, provider);
-      }
-    } catch (e) {
-      console.warn('[RT] Googleログインに失敗しました', e);
-      // 既に他デバイスでそのGoogleアカウントを使用済みの場合はこちらにフォールバック
-      if (e && e.code === 'auth/credential-already-in-use') {
-        try { await signInWithPopup(auth, provider); } catch (e2) { console.warn('[RT] フォールバックログインも失敗', e2); }
-      }
-    }
-  };
-
-  let splashDismissedThisView = false;
-
-  function updateAccountUi(user) {
-    const loginBtn = document.getElementById('google-login-btn');
-    const splash = document.getElementById('login-splash');
-    const footerUser = document.getElementById('account-footer-inner') ? document.getElementById('account-footer-user') : null;
-    const logoutBtn = document.getElementById('logout-btn');
-
-    const toggleLabel = document.getElementById('account-toggle-label');
-    const statusText = document.getElementById('account-status-text');
-    const accGoogleBtn = document.getElementById('account-google-btn');
-    const accLogoutBtn = document.getElementById('account-logout-btn');
-
-    if (user && !user.isAnonymous) {
-      if (loginBtn) { loginBtn.textContent = 'ログイン済み'; loginBtn.disabled = true; }
-      if (splash) splash.classList.remove('show');
-      if (footerUser) footerUser.textContent = (user.displayName || user.email || 'ログイン中') + ' としてログイン中';
-      if (logoutBtn) logoutBtn.style.display = 'inline-block';
-
-      const label = (user.displayName || user.email || 'U').trim().charAt(0).toUpperCase();
-      if (toggleLabel) toggleLabel.textContent = label || 'U';
-      if (statusText) statusText.textContent = 'Googleでログイン中：' + (user.displayName || user.email || '');
-      if (accGoogleBtn) accGoogleBtn.style.display = 'none';
-      if (accLogoutBtn) accLogoutBtn.style.display = 'block';
-    } else {
-      if (loginBtn) { loginBtn.textContent = 'Googleでログイン'; loginBtn.disabled = false; }
-      if (footerUser) footerUser.textContent = '';
-      if (logoutBtn) logoutBtn.style.display = 'none';
-      if (splash && !splashDismissedThisView && user) {
-        // 匿名ログインの確立後にオーバーレイを表示
-        requestAnimationFrame(function () { splash.classList.add('show'); });
-      }
-
-      if (toggleLabel) toggleLabel.textContent = '?';
-      if (statusText) statusText.textContent = '匿名でプレイ中（この端末のみ記録）';
-      if (accGoogleBtn) accGoogleBtn.style.display = 'block';
-      if (accLogoutBtn) accLogoutBtn.style.display = 'none';
-    }
-  }
-
-  async function loadNicknameUi(uid) {
-    const input = document.getElementById('nickname-input');
-    if (!input || !uid) return;
-    try {
-      const snap = await getDoc(doc(db, 'users', uid));
-      if (snap.exists() && typeof snap.data().nickname === 'string') {
-        input.value = snap.data().nickname;
-      }
-    } catch (e) {
-      console.warn('[RT] ニックネームの取得に失敗しました', e);
-    }
-  }
-
-  // ニックネームのバリデーション。
-  // ・2〜18文字（サロゲートペア絵文字も1文字として正しく数えるため Array.from を使用）
-  // ・HTML/JSとして解釈されうる記号（< > & バッククォート等）を禁止
-  // ・SQL風の文字列（クォート、セミコロン、代表的なSQLキーワード、コメント記号）を禁止
-  // ・絵文字を禁止
-  // ※ サーバー側（firestore.rules）でも長さ・記号の最終チェックを行うため、
-  //   これはあくまでユーザーへの分かりやすいフィードバック用の一次防御線。
-  function getNicknameError(nickname) {
-    const chars = Array.from(nickname);
-
-    if (chars.length < 2 || chars.length > 18) {
-      return 'ニックネームは2〜18文字で入力してください。';
-    }
-    if (/[<>&`]/.test(nickname)) {
-      return 'ニックネームに < > & ` は使用できません。';
-    }
-    if (/javascript\s*:|<\s*script|on\w+\s*=|eval\s*\(|document\.|window\./i.test(nickname)) {
-      return 'ニックネームにプログラムのコードは使用できません。';
-    }
-    if (/(--)|(\/\*)|(;)|('|")|(\b(select|insert|update|delete|drop|union|exec|truncate|alter|create)\b)/i.test(nickname)) {
-      return 'ニックネームにその記号・文字列は使用できません。';
-    }
-    const emojiRegex = /[\u{1F1E6}-\u{1FFFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\uFE0F\u200D]/u;
-    if (emojiRegex.test(nickname)) {
-      return 'ニックネームに絵文字は使用できません。';
-    }
-    return null;
-  }
-
-  function setNicknameError(message) {
-    const errEl = document.getElementById('nickname-error');
-    if (!errEl) return;
-    if (message) {
-      errEl.textContent = message;
-      errEl.style.display = 'block';
-    } else {
-      errEl.textContent = '';
-      errEl.style.display = 'none';
-    }
-  }
-
-  async function saveNickname() {
-    const input = document.getElementById('nickname-input');
-    const saveBtn = document.getElementById('nickname-save-btn');
-    if (!input || !currentUid) return;
-    const nickname = input.value.trim();
-
-    const error = getNicknameError(nickname);
-    if (error) {
-      setNicknameError(error);
-      return;
-    }
-    setNicknameError(null);
-
-    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中…'; }
-    try {
-      await setDoc(doc(db, 'users', currentUid), { nickname: nickname, updatedAt: serverTimestamp() }, { merge: true });
-      if (saveBtn) saveBtn.textContent = '保存しました';
-    } catch (e) {
-      console.warn('[RT] ニックネームの保存に失敗しました', e);
-      if (saveBtn) saveBtn.textContent = '保存に失敗';
-    } finally {
-      setTimeout(function () {
-        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存'; }
-      }, 1400);
-    }
-  }
-
-  // ▼▼ フレンド機能 ▼▼
-  const FRIEND_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 紛らわしい文字(0,O,1,I)を除外
-  let friendsUiLoaded = false;
-
-  function generateCandidateFriendCode() {
-    let s = '';
-    for (let i = 0; i < 6; i++) {
-      s += FRIEND_CODE_CHARS.charAt(Math.floor(Math.random() * FRIEND_CODE_CHARS.length));
-    }
-    return 'SUN-' + s;
-  }
-
-  function normalizeFriendCodeInput(raw) {
-    return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
-  }
-
-  // 未発行なら、衝突しないユニークなフレンドIDを新規発行する
-  async function ensureFriendCode(uid) {
-    try {
-      const userRef = doc(db, 'users', uid);
-      const snap = await getDoc(userRef);
-      if (snap.exists() && typeof snap.data().friendCode === 'string' && snap.data().friendCode) {
-        return snap.data().friendCode;
-      }
-      for (let attempt = 0; attempt < 8; attempt++) {
-        const code = generateCandidateFriendCode();
-        const codeRef = doc(db, 'friendCodes', code);
-        try {
-          const assigned = await runTransaction(db, async function (tx) {
-            const codeSnap = await tx.get(codeRef);
-            if (codeSnap.exists()) return false;
-            tx.set(codeRef, { uid: uid, createdAt: serverTimestamp() });
-            tx.set(userRef, { friendCode: code, updatedAt: serverTimestamp() }, { merge: true });
-            return true;
-          });
-          if (assigned) return code;
-        } catch (e) {
-          console.warn('[RT] フレンドID発行の再試行', e);
-        }
-      }
-    } catch (e) {
-      console.warn('[RT] フレンドIDの発行に失敗しました', e);
-    }
-    return null;
-  }
-
-  async function findUidByFriendCode(code) {
-    try {
-      const snap = await getDoc(doc(db, 'friendCodes', code));
-      if (!snap.exists()) return null;
-      return snap.data().uid || null;
-    } catch (e) {
-      console.warn('[RT] フレンドID検索に失敗しました', e);
-      return null;
-    }
-  }
-
-  async function isAlreadyFriend(uid, otherUid) {
-    try {
-      const snap = await getDoc(doc(db, 'users', uid, 'friends', otherUid));
-      return snap.exists();
-    } catch (e) {
-      return false;
-    }
-  }
-
-  async function sendFriendRequest(toUid) {
-    if (!currentUid || !toUid || toUid === currentUid) return { ok: false, reason: 'invalid' };
-    if (await isAlreadyFriend(currentUid, toUid)) return { ok: false, reason: 'already-friend' };
-
-    try {
-      const myDoc = await getDoc(doc(db, 'users', currentUid));
-      const myData = myDoc.exists() ? myDoc.data() : {};
-      await setDoc(doc(db, 'users', toUid, 'friendRequests', currentUid), {
-        fromUid: currentUid,
-        fromNickname: typeof myData.nickname === 'string' ? myData.nickname : '',
-        fromCode: typeof myData.friendCode === 'string' ? myData.friendCode : '',
-        createdAt: serverTimestamp(),
-        status: 'pending'
-      });
-      return { ok: true };
-    } catch (e) {
-      console.warn('[RT] フレンドリクエストの送信に失敗しました', e);
-      return { ok: false, reason: 'error' };
-    }
-  }
-
-  async function acceptFriendRequest(fromUid) {
-    if (!currentUid || !fromUid) return;
-    try {
-      await setDoc(doc(db, 'users', currentUid, 'friends', fromUid), { since: serverTimestamp() }, { merge: true });
-      await setDoc(doc(db, 'users', fromUid, 'friends', currentUid), { since: serverTimestamp() }, { merge: true });
-      await deleteDoc(doc(db, 'users', currentUid, 'friendRequests', fromUid));
-    } catch (e) {
-      console.warn('[RT] フレンドリクエストの承認に失敗しました', e);
-    }
-  }
-
-  async function declineFriendRequest(fromUid) {
-    if (!currentUid || !fromUid) return;
-    try {
-      await deleteDoc(doc(db, 'users', currentUid, 'friendRequests', fromUid));
-    } catch (e) {
-      console.warn('[RT] フレンドリクエストの削除に失敗しました', e);
-    }
-  }
-
-  function formatMs(ms) {
-    return typeof ms === 'number' ? ms + 'ms' : '–';
-  }
-
-  function escapeHtml(text) {
-    return String(text == null ? '' : text).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  }
-
-  async function refreshMyFriendCodeUi() {
-    const codeEl = document.getElementById('friend-my-code');
-    if (!codeEl || !currentUid) return;
-    codeEl.textContent = '発行中…';
-    const code = await ensureFriendCode(currentUid);
-    codeEl.textContent = code || '取得に失敗しました';
-  }
-
-  async function refreshFriendRequestsUi() {
-    const block = document.getElementById('friend-requests-block');
-    const listEl = document.getElementById('friend-requests-list');
-    if (!block || !listEl || !currentUid) return;
-    try {
-      const snaps = await getDocs(collection(db, 'users', currentUid, 'friendRequests'));
-      if (snaps.empty) {
-        block.style.display = 'none';
-        listEl.innerHTML = '';
-        return;
-      }
-      block.style.display = 'block';
-      const rows = [];
-      snaps.forEach(function (d) {
-        const data = d.data() || {};
-        const name = data.fromNickname ? escapeHtml(data.fromNickname) : (data.fromCode ? escapeHtml(data.fromCode) : '名無し');
-        rows.push(
-          '<div class="friend-request-row" data-from-uid="' + escapeHtml(d.id) + '">' +
-            '<span class="friend-avatar">👤</span>' +
-            '<span class="friend-name">' + name + '</span>' +
-            '<button type="button" class="friend-req-btn friend-req-accept" data-action="accept">承認</button>' +
-            '<button type="button" class="friend-req-btn friend-req-decline" data-action="decline">拒否</button>' +
-          '</div>'
-        );
-      });
-      listEl.innerHTML = rows.join('');
-    } catch (e) {
-      console.warn('[RT] フレンドリクエストの取得に失敗しました', e);
-    }
-  }
-
-  async function loadFriendsData() {
-    if (!currentUid) return [];
-    try {
-      const snaps = await getDocs(collection(db, 'users', currentUid, 'friends'));
-      const friendUids = [];
-      snaps.forEach(function (d) { friendUids.push(d.id); });
-
-      const friends = [];
-      for (let i = 0; i < friendUids.length; i++) {
-        const fUid = friendUids[i];
-        try {
-          const uSnap = await getDoc(doc(db, 'users', fUid));
-          if (uSnap.exists()) {
-            const data = uSnap.data();
-            friends.push({
-              uid: fUid,
-              nickname: (typeof data.nickname === 'string' && data.nickname) ? data.nickname : '名無し',
-              bestScore: typeof data.bestScore === 'number' ? data.bestScore : null,
-              attemptCount: typeof data.attemptCount === 'number' ? data.attemptCount : 0,
-              totalTimeSum: typeof data.totalTimeSum === 'number' ? data.totalTimeSum : 0
-            });
-          }
-        } catch (e) {}
-      }
-      return friends;
-    } catch (e) {
-      console.warn('[RT] フレンド一覧の取得に失敗しました', e);
-      return [];
-    }
-  }
-
-  function renderFriendList(friends) {
-    const listEl = document.getElementById('friend-list');
-    const countEl = document.getElementById('friend-count');
-    if (!listEl) return;
-    if (countEl) countEl.textContent = String(friends.length);
-
-    if (!friends.length) {
-      listEl.innerHTML = '<div class="friend-empty">まだフレンドがいません</div>';
-      return;
-    }
-
-    listEl.innerHTML = friends.map(function (f) {
-      const avg = f.attemptCount > 0 ? Math.round(f.totalTimeSum / f.attemptCount) + 'ms' : '–';
-      return (
-        '<div class="friend-list-row">' +
-          '<span class="friend-avatar">👤</span>' +
-          '<span class="friend-name">' + escapeHtml(f.nickname) + '<br><span class="friend-sub">平均 ' + avg + ' / ' + f.attemptCount + '回</span></span>' +
-          '<span class="friend-score">' + formatMs(f.bestScore) + '</span>' +
-        '</div>'
-      );
-    }).join('');
-  }
-
-  function renderFriendRanking(friends, self) {
-    const listEl = document.getElementById('friend-ranking-list');
-    if (!listEl) return;
-
-    const entries = friends.map(function (f) {
-      return { nickname: f.nickname, bestScore: f.bestScore, isSelf: false };
-    });
-    if (self) entries.push({ nickname: (self.nickname || 'あなた') + '（あなた）', bestScore: self.bestScore, isSelf: true });
-
-    entries.sort(function (a, b) {
-      if (a.bestScore === null && b.bestScore === null) return 0;
-      if (a.bestScore === null) return 1;
-      if (b.bestScore === null) return -1;
-      return a.bestScore - b.bestScore;
-    });
-
-    if (!entries.length) {
-      listEl.innerHTML = '<div class="friend-empty">まだフレンドがいません</div>';
-      return;
-    }
-
-    const medals = ['🥇', '🥈', '🥉'];
-    listEl.innerHTML = entries.map(function (e, i) {
-      const medal = medals[i] || (i + 1) + '.';
-      return (
-        '<div class="friend-rank-row"' + (e.isSelf ? ' style="background:rgba(43,135,209,0.18);"' : '') + '>' +
-          '<span class="friend-rank-medal">' + medal + '</span>' +
-          '<span class="friend-name">' + escapeHtml(e.nickname) + '</span>' +
-          '<span class="friend-score">' + formatMs(e.bestScore) + '</span>' +
-        '</div>'
-      );
-    }).join('');
-  }
-
-  async function refreshFriendListAndRanking() {
-    if (!currentUid) return;
-    const friends = await loadFriendsData();
-    renderFriendList(friends);
-
-    let selfData = null;
-    try {
-      const selfSnap = await getDoc(doc(db, 'users', currentUid));
-      if (selfSnap.exists()) {
-        const d = selfSnap.data();
-        selfData = {
-          nickname: (typeof d.nickname === 'string' && d.nickname) ? d.nickname : 'あなた',
-          bestScore: typeof d.bestScore === 'number' ? d.bestScore : null
-        };
-      }
-    } catch (e) {}
-    renderFriendRanking(friends, selfData);
-  }
-
-  async function refreshFriendsUi() {
-    const loginRequired = document.getElementById('friend-login-required');
-    const main = document.getElementById('friend-main');
-    if (!loginRequired || !main) return;
-
-    const user = auth.currentUser;
-    if (!user || user.isAnonymous) {
-      loginRequired.style.display = 'block';
-      main.style.display = 'none';
-      return;
-    }
-    loginRequired.style.display = 'none';
-    main.style.display = 'block';
-
-    await refreshMyFriendCodeUi();
-    await refreshFriendRequestsUi();
-    await refreshFriendListAndRanking();
-  }
-
-  async function handleFriendAdd() {
-    const input = document.getElementById('friend-add-input');
-    const btn = document.getElementById('friend-add-btn');
-    const statusEl = document.getElementById('friend-add-status');
-    if (!input || !statusEl) return;
-
-    const code = normalizeFriendCodeInput(input.value);
-    statusEl.className = 'friend-status-text';
-    if (!code) {
-      statusEl.textContent = 'IDを入力してください';
-      statusEl.classList.add('is-error');
-      return;
-    }
-    if (!currentUid || !auth.currentUser || auth.currentUser.isAnonymous) {
-      statusEl.textContent = 'ログインが必要です';
-      statusEl.classList.add('is-error');
-      return;
-    }
-
-    if (btn) { btn.disabled = true; btn.textContent = '追加中…'; }
-    statusEl.textContent = '検索中…';
-
-    try {
-      const toUid = await findUidByFriendCode(code);
-      if (!toUid) {
-        statusEl.textContent = 'そのIDのユーザーが見つかりません';
-        statusEl.classList.add('is-error');
-        return;
-      }
-      if (toUid === currentUid) {
-        statusEl.textContent = '自分のIDです';
-        statusEl.classList.add('is-error');
-        return;
-      }
-      if (await isAlreadyFriend(currentUid, toUid)) {
-        statusEl.textContent = 'すでにフレンドです';
-        statusEl.classList.add('is-error');
-        return;
-      }
-      const result = await sendFriendRequest(toUid);
-      if (result.ok) {
-        statusEl.textContent = 'フレンドリクエストを送信しました';
-        statusEl.classList.add('is-success');
-        input.value = '';
-      } else {
-        statusEl.textContent = 'リクエストの送信に失敗しました';
-        statusEl.classList.add('is-error');
-      }
-    } catch (e) {
-      console.warn('[RT] フレンド追加処理に失敗しました', e);
-      statusEl.textContent = 'エラーが発生しました';
-      statusEl.classList.add('is-error');
-    } finally {
-      if (btn) { btn.disabled = false; btn.textContent = '追加'; }
-    }
-  }
-
-  function bindFriendControls() {
-    const copyBtn = document.getElementById('friend-copy-code-btn');
-    if (copyBtn && !copyBtn.dataset.bound) {
-      copyBtn.dataset.bound = '1';
-      copyBtn.addEventListener('click', function () {
-        const codeEl = document.getElementById('friend-my-code');
-        const code = codeEl ? codeEl.textContent : '';
-        if (!code || code === '–') return;
-        const done = function () {
-          const original = copyBtn.textContent;
-          copyBtn.textContent = 'コピーしました';
-          setTimeout(function () { copyBtn.textContent = original; }, 1400);
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(code).then(done).catch(function () {});
-        }
-      });
-    }
-
-    const addBtn = document.getElementById('friend-add-btn');
-    if (addBtn && !addBtn.dataset.bound) {
-      addBtn.dataset.bound = '1';
-      addBtn.addEventListener('click', function () { handleFriendAdd(); });
-    }
-
-    const addInput = document.getElementById('friend-add-input');
-    if (addInput && !addInput.dataset.bound) {
-      addInput.dataset.bound = '1';
-      addInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') handleFriendAdd();
-      });
-    }
-
-    const requestsList = document.getElementById('friend-requests-list');
-    if (requestsList && !requestsList.dataset.bound) {
-      requestsList.dataset.bound = '1';
-      requestsList.addEventListener('click', async function (e) {
-        const btn = e.target.closest('.friend-req-btn');
-        if (!btn) return;
-        const row = e.target.closest('.friend-request-row');
-        const fromUid = row ? row.getAttribute('data-from-uid') : null;
-        if (!fromUid) return;
-        btn.disabled = true;
-        if (btn.dataset.action === 'accept') {
-          await acceptFriendRequest(fromUid);
-        } else {
-          await declineFriendRequest(fromUid);
-        }
-        refreshFriendRequestsUi();
-        refreshFriendListAndRanking();
-      });
-    }
-
-    const friendGoogleBtn = document.getElementById('friend-google-btn');
-    if (friendGoogleBtn && !friendGoogleBtn.dataset.bound) {
-      friendGoogleBtn.dataset.bound = '1';
-      friendGoogleBtn.addEventListener('click', function () { window.RT.signInWithGoogle(); });
-    }
-
-    document.querySelectorAll('.account-tab-btn').forEach(function (tabBtn) {
-      if (tabBtn.dataset.bound) return;
-      tabBtn.dataset.bound = '1';
-      tabBtn.addEventListener('click', function () {
-        const target = tabBtn.getAttribute('data-tab');
-        document.querySelectorAll('.account-tab-btn').forEach(function (b) { b.classList.toggle('active', b === tabBtn); });
-        document.querySelectorAll('.account-tab-panel').forEach(function (p) {
-          p.style.display = (p.getAttribute('data-tab-panel') === target) ? 'block' : 'none';
-        });
-        if (target === 'friends') {
-          refreshFriendsUi();
-        }
-      });
-    });
-  }
-  // ▲▲ フレンド機能ここまで ▲▲
-
-  // signin.html から送信されたメールリンクでの戻りを検知し、ログインを完了させる
-  async function completeEmailLinkSignInIfNeeded() {
-    if (!isSignInWithEmailLink(auth, window.location.href)) return;
-    let email = window.localStorage.getItem('sunnyEmailForSignIn');
-    if (!email) {
-      email = window.prompt('確認のため、ログインに使用したメールアドレスを入力してください');
-    }
-    if (!email) return;
-    try {
-      if (auth.currentUser && auth.currentUser.isAnonymous) {
-        const credential = EmailAuthProvider.credentialWithLink(email, window.location.href);
-        await linkWithCredential(auth.currentUser, credential);
-      } else {
-        await signInWithEmailLink(auth, email, window.location.href);
-      }
-      window.localStorage.removeItem('sunnyEmailForSignIn');
-      // URL からログインリンクのクエリを取り除く
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } catch (e) {
-      console.warn('[RT] メールリンクでのログインに失敗しました', e);
-    }
-  }
-  completeEmailLinkSignInIfNeeded();
-
-  onAuthStateChanged(auth, function (user) {
-    if (user) {
-      currentUid = user.uid;
-      pullAndMerge(user.uid);
-      updateAccountUi(user);
-      loadNicknameUi(user.uid);
-      if (!user.isAnonymous) {
-        window.localStorage.setItem('sunnySignedIn', '1');
-      }
-    } else {
-      currentUid = null;
-      window.localStorage.removeItem('sunnySignedIn');
-      signInAnonymously(auth).catch(function (e) {
-        console.warn('[RT] 匿名ログインに失敗しました', e);
-      });
-    }
-
-    const friendsTabPanel = document.querySelector('.account-tab-panel[data-tab-panel="friends"]');
-    if (friendsTabPanel && friendsTabPanel.style.display !== 'none') {
-      refreshFriendsUi();
-    }
-  });
-
-  function bindAccountControls() {
-    bindFriendControls();
-
-    const loginBtn = document.getElementById('google-login-btn');
-    if (loginBtn && !loginBtn.dataset.bound) {
-      loginBtn.dataset.bound = '1';
-      loginBtn.addEventListener('click', function () { window.RT.signInWithGoogle(); });
-    }
-
-    const splashGoogleBtn = document.getElementById('login-splash-google-btn');
-    if (splashGoogleBtn && !splashGoogleBtn.dataset.bound) {
-      splashGoogleBtn.dataset.bound = '1';
-      splashGoogleBtn.addEventListener('click', function () {
-        window.RT.signInWithGoogle();
-      });
-    }
-
-    const splashSkipBtn = document.getElementById('login-splash-skip');
-    if (splashSkipBtn && !splashSkipBtn.dataset.bound) {
-      splashSkipBtn.dataset.bound = '1';
-      splashSkipBtn.addEventListener('click', function () {
-        splashDismissedThisView = true;
-        const splash = document.getElementById('login-splash');
-        if (splash) splash.classList.remove('show');
-      });
-    }
-
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn && !logoutBtn.dataset.bound) {
-      logoutBtn.dataset.bound = '1';
-      logoutBtn.addEventListener('click', async function () {
-        try {
-          window.localStorage.removeItem('sunnySignedIn');
-          await signOut(auth);
-        } catch (e) {
-          console.warn('[RT] ログアウトに失敗しました', e);
-        }
-      });
-    }
-
-    const toggleBtn = document.getElementById('account-toggle-btn');
-    const panel = document.getElementById('account-panel');
-    if (toggleBtn && panel && !toggleBtn.dataset.bound) {
-      toggleBtn.dataset.bound = '1';
-      toggleBtn.addEventListener('click', function (event) {
-        event.stopPropagation();
-        panel.classList.toggle('open');
-      });
-      panel.addEventListener('click', function (event) { event.stopPropagation(); });
-      document.addEventListener('click', function () {
-        panel.classList.remove('open');
-      });
-    }
-
-    const nicknameInputEl = document.getElementById('nickname-input');
-    if (nicknameInputEl && !nicknameInputEl.dataset.bound) {
-      nicknameInputEl.dataset.bound = '1';
-      nicknameInputEl.addEventListener('input', function () { setNicknameError(null); });
-    }
-
-    const nicknameSaveBtn = document.getElementById('nickname-save-btn');
-    if (nicknameSaveBtn && !nicknameSaveBtn.dataset.bound) {
-      nicknameSaveBtn.dataset.bound = '1';
-      nicknameSaveBtn.addEventListener('click', function () { saveNickname(); });
-    }
-
-    const accGoogleBtn = document.getElementById('account-google-btn');
-    if (accGoogleBtn && !accGoogleBtn.dataset.bound) {
-      accGoogleBtn.dataset.bound = '1';
-      accGoogleBtn.addEventListener('click', function () { window.RT.signInWithGoogle(); });
-    }
-
-    const accLogoutBtn = document.getElementById('account-logout-btn');
-    if (accLogoutBtn && !accLogoutBtn.dataset.bound) {
-      accLogoutBtn.dataset.bound = '1';
-      accLogoutBtn.addEventListener('click', async function () {
-        try {
-          window.localStorage.removeItem('sunnySignedIn');
-          await signOut(auth);
-        } catch (e) {
-          console.warn('[RT] ログアウトに失敗しました', e);
-        }
-      });
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bindAccountControls);
-  } else {
-    bindAccountControls();
-  }
-</script>
-<!-- ▲▲ Firebaseここまで ▲▲ -->
-
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</div>
 </body>
 </html>
