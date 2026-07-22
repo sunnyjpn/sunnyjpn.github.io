@@ -700,6 +700,122 @@
     #main-text.pulse-ms { animation: none; }
   }
   /* ▲▲ 追加演出ここまで ▲▲ */
+
+  /* ▼▼ ログイン誘導オーバーレイ／アカウントフッター ▼▼ */
+  #account-footer {
+    padding: 32px 20px 48px;
+    text-align: center;
+  }
+
+  #account-footer-inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.45);
+  }
+
+  #logout-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.6);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  #logout-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+  }
+
+  #login-splash {
+    position: fixed;
+    inset: 0;
+    background: rgba(8,8,10,0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+
+  #login-splash.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .login-splash-card {
+    width: 100%;
+    max-width: 400px;
+    background: #17171b;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 36px 28px;
+    text-align: center;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.35s cubic-bezier(.2,.7,.3,1);
+  }
+
+  #login-splash.show .login-splash-card {
+    transform: translateY(0) scale(1);
+  }
+
+  .login-splash-title {
+    font-size: 21px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    color: #fff;
+  }
+
+  .login-splash-tagline {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.55);
+    margin: 0 0 24px;
+  }
+
+  .login-splash-google-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: #fff;
+    color: #1f1f1f;
+    font-weight: 600;
+    font-size: 14.5px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .login-splash-google-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+  }
+
+  .login-splash-skip {
+    display: block;
+    margin: 16px auto 0;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.45);
+    font-size: 12.5px;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #login-splash, .login-splash-card { transition: none; }
+  }
+  /* ▲▲ ログイン誘導オーバーレイここまで ▲▲ */
 </style>
 </head>
 <body translate="no" class="notranslate">
@@ -835,6 +951,22 @@
       </div>
     </div>
   </section>
+
+  <footer id="account-footer">
+    <div id="account-footer-inner">
+      <span id="account-footer-user"></span>
+      <button id="logout-btn" type="button" style="display:none;">ログアウト</button>
+    </div>
+  </footer>
+
+  <div id="login-splash" aria-hidden="true">
+    <div class="login-splash-card">
+      <p class="login-splash-title">記録を、失わない。</p>
+      <p class="login-splash-tagline">Googleでログインすると、ハイスコアをどの端末からでも引き継げます。</p>
+      <button id="login-splash-google-btn" type="button" class="login-splash-google-btn">Googleで続ける</button>
+      <button id="login-splash-skip" type="button" class="login-splash-skip">あとで（このまま続ける）</button>
+    </div>
+  </div>
 
 <script>
 (function () {
@@ -1384,6 +1516,7 @@
     getAuth,
     signInAnonymously,
     onAuthStateChanged,
+    signOut,
     GoogleAuthProvider,
     signInWithPopup,
     linkWithPopup
@@ -1487,20 +1620,35 @@
     }
   };
 
-  onAuthStateChanged(auth, function (user) {
+  let splashDismissedThisView = false;
+
+  function updateAccountUi(user) {
     const loginBtn = document.getElementById('google-login-btn');
+    const splash = document.getElementById('login-splash');
+    const footerUser = document.getElementById('account-footer-inner') ? document.getElementById('account-footer-user') : null;
+    const logoutBtn = document.getElementById('logout-btn');
+
+    if (user && !user.isAnonymous) {
+      if (loginBtn) { loginBtn.textContent = 'ログイン済み'; loginBtn.disabled = true; }
+      if (splash) splash.classList.remove('show');
+      if (footerUser) footerUser.textContent = (user.displayName || user.email || 'ログイン中') + ' としてログイン中';
+      if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    } else {
+      if (loginBtn) { loginBtn.textContent = 'Googleでログイン'; loginBtn.disabled = false; }
+      if (footerUser) footerUser.textContent = '';
+      if (logoutBtn) logoutBtn.style.display = 'none';
+      if (splash && !splashDismissedThisView && user) {
+        // 匿名ログインの確立後にオーバーレイを表示
+        requestAnimationFrame(function () { splash.classList.add('show'); });
+      }
+    }
+  }
+
+  onAuthStateChanged(auth, function (user) {
     if (user) {
       currentUid = user.uid;
       pullAndMerge(user.uid);
-      if (loginBtn) {
-        if (user.isAnonymous) {
-          loginBtn.textContent = 'Googleでログイン';
-          loginBtn.disabled = false;
-        } else {
-          loginBtn.textContent = 'ログイン済み';
-          loginBtn.disabled = true;
-        }
-      }
+      updateAccountUi(user);
     } else {
       currentUid = null;
       signInAnonymously(auth).catch(function (e) {
@@ -1509,22 +1657,48 @@
     }
   });
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function bindAccountControls() {
     const loginBtn = document.getElementById('google-login-btn');
-    if (loginBtn) {
-      loginBtn.addEventListener('click', function () {
+    if (loginBtn && !loginBtn.dataset.bound) {
+      loginBtn.dataset.bound = '1';
+      loginBtn.addEventListener('click', function () { window.RT.signInWithGoogle(); });
+    }
+
+    const splashGoogleBtn = document.getElementById('login-splash-google-btn');
+    if (splashGoogleBtn && !splashGoogleBtn.dataset.bound) {
+      splashGoogleBtn.dataset.bound = '1';
+      splashGoogleBtn.addEventListener('click', function () {
         window.RT.signInWithGoogle();
       });
     }
-  });
-  if (document.readyState !== 'loading') {
-    const loginBtnNow = document.getElementById('google-login-btn');
-    if (loginBtnNow && !loginBtnNow.dataset.bound) {
-      loginBtnNow.dataset.bound = '1';
-      loginBtnNow.addEventListener('click', function () {
-        window.RT.signInWithGoogle();
+
+    const splashSkipBtn = document.getElementById('login-splash-skip');
+    if (splashSkipBtn && !splashSkipBtn.dataset.bound) {
+      splashSkipBtn.dataset.bound = '1';
+      splashSkipBtn.addEventListener('click', function () {
+        splashDismissedThisView = true;
+        const splash = document.getElementById('login-splash');
+        if (splash) splash.classList.remove('show');
       });
     }
+
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn && !logoutBtn.dataset.bound) {
+      logoutBtn.dataset.bound = '1';
+      logoutBtn.addEventListener('click', async function () {
+        try {
+          await signOut(auth);
+        } catch (e) {
+          console.warn('[RT] ログアウトに失敗しました', e);
+        }
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindAccountControls);
+  } else {
+    bindAccountControls();
   }
 </script>
 <!-- ▲▲ Firebaseここまで ▲▲ -->
