@@ -32,7 +32,7 @@ service cloud.firestore {
       function statsAreValid() {
         return afterData().bestScore is number
             && afterData().bestScore >= 50
-            && afterData().bestScore <= 3000
+            && afterData().bestScore <= 1000
             && afterData().attemptCount is number
             && afterData().attemptCount >= 0
             && afterData().attemptCount <= 1000000
@@ -87,6 +87,24 @@ service cloud.firestore {
         return !afterData().keys().hasAny(['friends', 'friendRequests']);
       }
 
+      // updatedAt は必ずサーバー時刻（serverTimestamp()）を使うこと。
+      // クライアントが任意の Timestamp を送って次のチェック（レート制限）を
+      // 回避・偽装できないようにするための必須チェック。
+      function updatedAtIsServerTime() {
+        return 'updatedAt' in afterData()
+          && afterData().updatedAt == request.time;
+      }
+
+      // 連投・スコア荒らし対策：前回の書き込み（updatedAt）から
+      // 5秒以上経過していない場合は create/update 自体を拒否する。
+      // updatedAt はサーバー時刻のため、クライアント側の制限と違い
+      // コードの改変や削除では回避できない（UIDごとに自動で制限される）。
+      function rateLimitOk() {
+        return isNewDoc()
+          || !('updatedAt' in beforeData())
+          || request.time > beforeData().updatedAt + duration.value(5, 's');
+      }
+
       allow read: if true;
 
       allow create, update: if isOwner()
@@ -94,7 +112,9 @@ service cloud.firestore {
         && statsMonotonic()
         && nicknameIsValid()
         && friendCodeIsValid()
-        && doesNotTouchFriendFields();
+        && doesNotTouchFriendFields()
+        && updatedAtIsServerTime()
+        && rateLimitOk();
 
       allow delete: if false;
 
