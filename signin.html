@@ -265,6 +265,7 @@
       try {
         const provider = new GoogleAuthProvider();
         await signInWithPopup(auth, provider);
+        window.localStorage.setItem('sunnySignedIn', '1');
         window.location.href = RETURN_URL;
       } catch (e) {
         console.warn('[Sunny] Googleログインに失敗しました', e);

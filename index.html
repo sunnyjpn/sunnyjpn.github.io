@@ -6,12 +6,15 @@
 <meta name="google" content="notranslate">
 <meta name="google-site-verification" content="2LcM6p26drIHs5ExNlWPkK-7-iWjDLfdfwgiQJIiaEc">
 
-<!-- ▼▼ サイトを開いたら自動的にサインインページへ移動 ▼▼ -->
+<!-- ▼▼ 未ログイン時のみ自動的にサインインページへ移動 ▼▼ -->
 <script>
   (function () {
-    if (!/\/signin(\.html)?\/?$/.test(window.location.pathname)) {
-      window.location.replace('./signin.html');
-    }
+    if (/\/signin(\.html)?\/?$/.test(window.location.pathname)) return;
+    // 既にログイン済みならリダイレクトしない（そのままログイン状態を継続）
+    if (window.localStorage.getItem('sunnySignedIn') === '1') return;
+    // メールのサインインリンクで戻ってきた場合もリダイレクトしない（ログイン処理を継続させる）
+    if (/[?&](mode=signIn|oobCode=|apiKey=)/.test(window.location.search)) return;
+    window.location.replace('./signin.html');
   })();
 </script>
 <!-- ▲▲ 自動リダイレクトここまで ▲▲ -->
@@ -1687,8 +1690,12 @@
       currentUid = user.uid;
       pullAndMerge(user.uid);
       updateAccountUi(user);
+      if (!user.isAnonymous) {
+        window.localStorage.setItem('sunnySignedIn', '1');
+      }
     } else {
       currentUid = null;
+      window.localStorage.removeItem('sunnySignedIn');
       signInAnonymously(auth).catch(function (e) {
         console.warn('[RT] 匿名ログインに失敗しました', e);
       });
@@ -1725,6 +1732,7 @@
       logoutBtn.dataset.bound = '1';
       logoutBtn.addEventListener('click', async function () {
         try {
+          window.localStorage.removeItem('sunnySignedIn');
           await signOut(auth);
         } catch (e) {
           console.warn('[RT] ログアウトに失敗しました', e);
