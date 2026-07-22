@@ -227,6 +227,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-check.js";
     import {
       getAuth,
       GoogleAuthProvider,
@@ -246,6 +247,11 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    // index.html と同じ App Check 設定（サイトキーは同じものに差し替える）
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_V3_SITE_KEY'),
+      isTokenAutoRefreshEnabled: true
+    });
     const auth = getAuth(app);
 
     const googleBtn = document.getElementById('google-btn');

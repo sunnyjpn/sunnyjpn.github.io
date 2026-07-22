@@ -28,36 +28,15 @@ service cloud.firestore {
         return resource == null;
       }
 
-      // 統計フィールドの型・範囲チェック
-      function statsAreValid() {
-        return afterData().bestScore is number
-            && afterData().bestScore >= 50
-            && afterData().bestScore <= 1000
-            && afterData().attemptCount is number
-            && afterData().attemptCount >= 0
-            && afterData().attemptCount <= 1000000
-            && afterData().totalTimeSum is number
-            && afterData().totalTimeSum >= 0
-            && (!('recentHistory' in afterData())
-                || (afterData().recentHistory is list && afterData().recentHistory.size() <= 5));
-      }
-
-      // 既存ドキュメントに対する更新の場合、記録を「悪化」させたり
-      // 巻き戻したりする改ざんを防止する（ベストスコアは更新のたび同等以下、回数・合計時間は単調増加のみ許可）
-      function statsMonotonic() {
-        return isNewDoc()
-          || (
-            !('bestScore' in beforeData())
-            || afterData().bestScore <= beforeData().bestScore
-          )
-          && (
-            !('attemptCount' in beforeData())
-            || afterData().attemptCount >= beforeData().attemptCount
-          )
-          && (
-            !('totalTimeSum' in beforeData())
-            || afterData().totalTimeSum >= beforeData().totalTimeSum
-          );
+      // 統計フィールド（bestScore / attemptCount / totalTimeSum / recentHistory /
+      // recentRawMs / suspicious / createdAt / updatedAt）は、
+      // Cloud Functions（startRound / submitScore）内の Admin SDK からのみ書き込む。
+      // Admin SDK はセキュリティルールの対象外のため、ここで許可する必要はない。
+      // むしろクライアントSDKからは絶対にこれらのフィールドへ触れさせない
+      // （直接書き込みができてしまうと、レート制限もプレイ実在性の検証も
+      //   一切通さずにランキングを荒らせてしまうため）。
+      function onlyTouchesClientFields(before) {
+        return request.resource.data.diff(before).affectedKeys().hasOnly(['nickname', 'friendCode']);
       }
 
       // ニックネームは16文字以内の文字列（未設定なら空文字も許可）
@@ -81,40 +60,19 @@ service cloud.firestore {
           );
       }
 
-      // 親ドキュメントに friends / friendRequests をフィールドとして
-      // 直接書き込むことは禁止する（サブコレクションのみを正とする）
-      function doesNotTouchFriendFields() {
-        return !afterData().keys().hasAny(['friends', 'friendRequests']);
-      }
-
-      // updatedAt は必ずサーバー時刻（serverTimestamp()）を使うこと。
-      // クライアントが任意の Timestamp を送って次のチェック（レート制限）を
-      // 回避・偽装できないようにするための必須チェック。
-      function updatedAtIsServerTime() {
-        return 'updatedAt' in afterData()
-          && afterData().updatedAt == request.time;
-      }
-
-      // 連投・スコア荒らし対策：前回の書き込み（updatedAt）から
-      // 5秒以上経過していない場合は create/update 自体を拒否する。
-      // updatedAt はサーバー時刻のため、クライアント側の制限と違い
-      // コードの改変や削除では回避できない（UIDごとに自動で制限される）。
-      function rateLimitOk() {
-        return isNewDoc()
-          || !('updatedAt' in beforeData())
-          || request.time > beforeData().updatedAt + duration.value(5, 's');
-      }
-
       allow read: if true;
 
-      allow create, update: if isOwner()
-        && statsAreValid()
-        && statsMonotonic()
+      // クライアント（ブラウザ）からの直接書き込みは nickname / friendCode のみ許可。
+      // スコア（bestScore 等）は Cloud Functions 経由でしか更新できない。
+      allow create: if isOwner()
+        && request.resource.data.keys().hasOnly(['nickname', 'friendCode'])
         && nicknameIsValid()
-        && friendCodeIsValid()
-        && doesNotTouchFriendFields()
-        && updatedAtIsServerTime()
-        && rateLimitOk();
+        && friendCodeIsValid();
+
+      allow update: if isOwner()
+        && onlyTouchesClientFields(resource.data)
+        && nicknameIsValid()
+        && friendCodeIsValid();
 
       allow delete: if false;
 
@@ -172,6 +130,16 @@ service cloud.firestore {
           && (request.auth.uid == uid || request.auth.uid == friendUid);
 
         allow update: if false;
+      }
+
+      // ----------------------------------------------------------------
+      // users/{uid}/rounds/{roundId}
+      //   - Cloud Functions（startRound / submitScore）専用のワンタイム
+      //     トークン置き場。クライアントSDKからは読み書き一切不可。
+      //     Admin SDK はルールの対象外のため、Functions側からは常に操作できる。
+      // ----------------------------------------------------------------
+      match /rounds/{roundId} {
+        allow read, write: if false;
       }
     }
 

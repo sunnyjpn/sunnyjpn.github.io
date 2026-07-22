@@ -1464,14 +1464,24 @@
   }
 
   function beginIntegrityRound(delay) {
-    activeRound = {
+    const round = {
       id: createRoundNonce(),
       armedAt: performance.now(),
       scheduledDelay: delay,
       readyAt: 0,
       hidden: document.hidden,
-      used: false
+      used: false,
+      roundId: null,
+      roundIdPromise: null
     };
+    activeRound = round;
+    // サーバーにラウンド開始を申告し、ワンタイムトークンを発行してもらう。
+    // これが「本当にプレイしたか」をサーバー側で検証するための土台になる
+    // （Cloud Functions 側の submitScore が、このトークンの発行時刻からの
+    //   経過時間を見て、待機・反応の過程を経ずに結果だけ送る攻撃を弾く）。
+    round.roundIdPromise = (window.RT && window.RT.startRound ? window.RT.startRound() : Promise.resolve(null))
+      .then(function (id) { round.roundId = id; return id; })
+      .catch(function () { return null; });
   }
 
   function markRoundReady() {
@@ -1516,7 +1526,7 @@
     if (activeRound.hidden || document.hidden) {
       return flagSuspicious('バックグラウンド状態の試行は記録対象外です');
     }
-    return { ok: true, event: buildAttemptEvent(ms) };
+    return { ok: true, event: buildAttemptEvent(ms), round: activeRound };
   }
 
   document.addEventListener('visibilitychange', function () {
@@ -1674,19 +1684,6 @@
         recentHistory
       }));
     } catch (e) {}
-
-    // Firebase同期フック（後段のmoduleスクリプトが登録する）
-    if (window.RT && typeof window.RT.onSave === 'function') {
-      window.RT.onSave({
-        bestScore,
-        attemptCount,
-        totalTimeSum,
-        recentHistory,
-        latestEvent: meta && meta.latestEvent ? meta.latestEvent : null,
-        isNewBest: !!(meta && meta.isNewBest),
-        cloudSyncLocked: integrityState.cloudSyncLocked
-      });
-    }
   }
 
   function renderStats() {
@@ -1830,6 +1827,19 @@
       }
       saveStats({ latestEvent: verdict && verdict.event ? verdict.event : null, isNewBest: isNewBest });
       renderStats();
+
+      // スコアの送信はサーバー発行のラウンドトークンとセットで行う。
+      // トークンが無い（発行に失敗・未ログイン等）場合はローカル記録のみに留める。
+      if (verdict && verdict.round) {
+        (function (round) {
+          Promise.resolve(round.roundIdPromise).then(function () {
+            const roundId = round.roundId;
+            if (roundId && window.RT && window.RT.submitScore) {
+              window.RT.submitScore(roundId, ms);
+            }
+          });
+        })(verdict.round);
+      }
     }
 
     vibrateFeedback(accepted && isNewBest ? [30, 40, 30] : 25);
@@ -2201,6 +2211,8 @@
     runTransaction,
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+  import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
+  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-check.js";
   import { getAnalytics, isSupported as analyticsIsSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
 
   const firebaseConfig = {
@@ -2214,8 +2226,21 @@
   };
 
   const app = initializeApp(firebaseConfig);
+
+  // ▼ Firebase App Check（reCAPTCHA v3）
+  // Bot・スクリプトからの直接アクセスや、このアプリ以外からのAPI流用を減らすための検証。
+  // サイトキーは Firebase Console →「App Check」→ アプリを登録（reCAPTCHA v3）で発行したものに
+  // 差し替えること（下記はプレースホルダーのため、このままでは機能しない）。
+  // ローカル開発時は self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; を初期化前に設定すると
+  // デバッグトークンが発行され、Console側に登録すればApp Check有効時でも動作確認できる。
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_V3_SITE_KEY'),
+    isTokenAutoRefreshEnabled: true
+  });
+
   const auth = getAuth(app);
   const db = getFirestore(app);
+  const functions = getFunctions(app);
 
   analyticsIsSupported().then(function (supported) {
     if (supported) getAnalytics(app);
@@ -2223,12 +2248,11 @@
 
   let currentUid = null;
   let isSyncing = false;
-  const PENDING_BEST_KEY = 'reaction-time-pending-best-v1';
   const RECENT_HISTORY_MAX_SYNC = 5;
 
   function isPlausibleStats(s) {
     if (!s) return false;
-    if (s.bestScore !== null && (typeof s.bestScore !== 'number' || s.bestScore < 50 || s.bestScore > 3000)) return false;
+    if (s.bestScore !== null && (typeof s.bestScore !== 'number' || s.bestScore < 50 || s.bestScore > 1000)) return false;
     if (typeof s.attemptCount !== 'number' || s.attemptCount < 0 || s.attemptCount > 1000000) return false;
     if (typeof s.totalTimeSum !== 'number' || s.totalTimeSum < 0) return false;
     return true;
@@ -2246,163 +2270,70 @@
     };
   }
 
-  // ハイスコア更新時のみクラウドへ送るため、送信待ちの「最新のベスト記録」を1件だけ保持する
-  function readPendingBest() {
+  // スコアの書き込みはクライアントから一切行わない（firestore.rulesでも禁止済み）。
+  // Cloud Functions（startRound / submitScore）だけが、
+  //   ・本当にプレイした痕跡があるか（サーバー時刻での経過時間チェック）
+  //   ・値が妥当な範囲か
+  //   ・連投していないか（5秒に1回まで）
+  //   ・同一値の連続送信（Bot疑い）でないか
+  // を検証したうえでユーザーのスコアを更新できる。
+  const startRoundCallable = httpsCallable(functions, 'startRound');
+  const submitScoreCallable = httpsCallable(functions, 'submitScore');
+
+  // ラウンド開始をサーバーへ申告し、ワンタイムトークンを発行してもらう
+  async function requestRoundToken() {
     try {
-      const raw = window.localStorage.getItem(PENDING_BEST_KEY);
-      return raw ? JSON.parse(raw) : null;
+      const res = await startRoundCallable();
+      return (res && res.data && res.data.roundId) || null;
     } catch (e) {
+      console.warn('[RT] ラウンド開始トークンの取得に失敗しました', e);
       return null;
     }
   }
 
-  function writePendingBest(stats) {
+  // ラウンドの結果をサーバーへ送信し、サーバー側で確定した記録をローカル表示へ反映する
+  async function submitRoundResult(roundId, ms) {
+    if (!roundId) return; // トークンが無い場合はクラウドへ送らない（ローカル記録のみ）
     try {
-      if (!stats) {
-        window.localStorage.removeItem(PENDING_BEST_KEY);
-        return;
+      const res = await submitScoreCallable({ roundId: roundId, ms: ms });
+      if (res && res.data && window.RT && window.RT.applyRemoteStats) {
+        window.RT.applyRemoteStats({
+          bestScore: res.data.bestScore,
+          attemptCount: res.data.attemptCount,
+          totalTimeSum: res.data.totalTimeSum
+        });
       }
-      window.localStorage.setItem(PENDING_BEST_KEY, JSON.stringify(normalizeStats(stats)));
-    } catch (e) {}
-  }
-
-  function requestDeferredSync() {
-    if (!('serviceWorker' in navigator)) return Promise.resolve();
-    return navigator.serviceWorker.ready.then(function (registration) {
-      if (registration && registration.sync) {
-        return registration.sync.register('reaction-time-stats-sync').catch(function () {});
-      }
-      if (registration && registration.active) {
-        registration.active.postMessage({ type: 'RT_REQUEST_SYNC' });
-      }
-    }).catch(function () {});
-  }
-
-  // ハイスコア更新時のみ呼ばれる。クラウド側の記録が既に同等以上なら何もしない。
-  async function syncBestScoreToCloud(stats, force) {
-    const normalized = normalizeStats(stats);
-    if (!currentUid) {
-      writePendingBest(normalized);
-      return;
-    }
-    if (!force && !navigator.onLine) {
-      writePendingBest(normalized);
-      return;
-    }
-    if (isSyncing) {
-      writePendingBest(normalized);
-      return;
-    }
-
-    isSyncing = true;
-    try {
-      const ref = doc(db, 'users', currentUid);
-      const snap = await getDoc(ref);
-      const remoteBest = snap.exists() && typeof snap.data().bestScore === 'number' ? snap.data().bestScore : null;
-
-      if (remoteBest !== null && normalized.bestScore !== null && remoteBest <= normalized.bestScore) {
-        // クラウド側が既に同等以上のハイスコアを持っている場合は送信不要
-        writePendingBest(null);
-        return;
-      }
-
-      const payload = {
-        bestScore: normalized.bestScore,
-        attemptCount: normalized.attemptCount,
-        totalTimeSum: normalized.totalTimeSum,
-        recentHistory: normalized.recentHistory,
-        updatedAt: serverTimestamp()
-      };
-      if (!snap.exists()) payload.createdAt = serverTimestamp();
-
-      await setDoc(ref, payload, { merge: true });
-      writePendingBest(null);
     } catch (e) {
-      console.warn('[RT] ハイスコア同期に失敗しました', e);
-      writePendingBest(normalized);
-      requestDeferredSync();
-    } finally {
-      isSyncing = false;
+      // レート制限・ラウンド期限切れ・不正な値などは静かに無視する
+      // （ローカル表示は既に更新済みなのでUX上の支障はない）
+      console.warn('[RT] スコア送信が拒否されました', (e && e.message) || e);
     }
   }
 
-  function flushPendingStats(force) {
-    const pending = readPendingBest();
-    if (!pending) return Promise.resolve();
-    return syncBestScoreToCloud(pending, force);
-  }
-
+  // ログイン時：クラウド側に既に記録があればローカル表示へ取り込む（読み取りのみ）。
+  // ログイン前にローカルだけでプレイした記録は、サーバー検証を経ていないため
+  // クラウドへは反映されない（ログイン後の新しいプレイ分から同期される）。
   async function pullAndMerge(uid) {
     isSyncing = true;
     try {
       const ref = doc(db, 'users', uid);
       const snap = await getDoc(ref);
-      const local = window.RT && window.RT.getStats ? normalizeStats(window.RT.getStats()) : null;
-
       if (snap.exists()) {
         const remote = normalizeStats(snap.data());
-        if (isPlausibleStats(remote)) {
-          if (local && local.bestScore !== null && (remote.bestScore === null || local.bestScore < remote.bestScore)) {
-            // 端末側の記録の方が良い場合はクラウド側を更新する
-            await setDoc(ref, {
-              bestScore: local.bestScore,
-              attemptCount: local.attemptCount,
-              totalTimeSum: local.totalTimeSum,
-              recentHistory: local.recentHistory,
-              updatedAt: serverTimestamp()
-            }, { merge: true });
-          } else if (window.RT && window.RT.applyRemoteStats) {
-            window.RT.applyRemoteStats(remote);
-          }
+        if (isPlausibleStats(remote) && window.RT && window.RT.applyRemoteStats) {
+          window.RT.applyRemoteStats(remote);
         }
-      } else if (local) {
-        await setDoc(ref, {
-          bestScore: local.bestScore,
-          attemptCount: local.attemptCount,
-          totalTimeSum: local.totalTimeSum,
-          recentHistory: local.recentHistory,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }, { merge: true });
       }
     } catch (e) {
       console.warn('[RT] Firestore読み込みに失敗しました', e);
     } finally {
       isSyncing = false;
     }
-    flushPendingStats(true);
   }
 
   window.RT = window.RT || {};
-  window.RT.flushPendingStats = flushPendingStats;
-  window.RT.requestDeferredSync = requestDeferredSync;
-  window.RT.onSave = function (stats) {
-    if (!stats || stats.cloudSyncLocked) return;
-    // ハイスコアが更新された時だけクラウドへ同期する（毎回の試行は送信しない）
-    if (!stats.isNewBest) return;
-    syncBestScoreToCloud({
-      bestScore: stats.bestScore,
-      attemptCount: stats.attemptCount,
-      totalTimeSum: stats.totalTimeSum,
-      recentHistory: stats.recentHistory
-    }, false);
-  };
-
-  window.addEventListener('online', function () {
-    flushPendingStats(true);
-  });
-
-  document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) flushPendingStats(false);
-  });
-
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', function (event) {
-      if (event && event.data && event.data.type === 'RT_FLUSH_SYNC') {
-        flushPendingStats(true);
-      }
-    });
-  }
+  window.RT.startRound = requestRoundToken;
+  window.RT.submitScore = submitRoundResult;
 
   // 匿名アカウントからGoogleアカウントへ、記録を引き継いだまま昇格させる
   window.RT.signInWithGoogle = async function () {
