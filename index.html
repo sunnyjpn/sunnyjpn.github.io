@@ -19,9 +19,9 @@
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self' 'unsafe-inline' https://www.gstatic.com https://pagead2.googlesyndication.com https://static.cloudflareinsights.com https://www.googletagmanager.com;
-  style-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   img-src 'self' data: https:;
-  font-src 'self' data:;
+  font-src 'self' data: https://fonts.gstatic.com;
   connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://www.google-analytics.com https://region1.google-analytics.com https://pagead2.googlesyndication.com https://static.cloudflareinsights.com https://www.google.com;
   frame-src https://www.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://pagead2.googlesyndication.com;
   object-src 'none';
@@ -1207,12 +1207,22 @@
   /* ▲▲ ログイン誘導オーバーレイここまで ▲▲ */
   /* ===== Concierge-inspired theme touches: serif headlines, gold selection ===== */
   #idle-title,
-  #main-text,
-  .stat-value,
-  .account-stat-value {
+  #main-text {
     font-family: 'Cormorant Garamond', Georgia, serif;
     font-weight: 500;
     letter-spacing: 0.01em;
+  }
+  .stat-value,
+  .account-stat-value {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+  }
+  #site-copyright {
+    text-align: center;
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    color: rgba(245,236,211,0.4);
+    padding: 20px 16px calc(env(safe-area-inset-bottom) + 90px);
   }
   ::selection { background: #c4a273; color: #0f1a16; }
 </style>
@@ -1427,6 +1437,8 @@
       </div>
     </div>
   </section>
+
+  <div id="site-copyright">© 2026 SunnyJPN. All Rights Reserved.</div>
 
   <footer id="account-footer">
     <div id="account-footer-inner">
