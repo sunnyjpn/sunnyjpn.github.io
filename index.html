@@ -533,13 +533,81 @@
     color: rgba(255,255,255,0.4);
     margin-bottom: 6px;
   }
+
+  /* ▼▼ スクロール演出（フェードイン／拡大／波） ▼▼ */
+  #scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0%;
+    background: #2B87D1;
+    z-index: 9999;
+    transition: width 0.08s linear;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s cubic-bezier(.2,.7,.3,1), transform 0.6s cubic-bezier(.2,.7,.3,1);
+    will-change: opacity, transform;
+  }
+
+  .reveal.reveal-scale {
+    transform: scale(0.95) translateY(0);
+  }
+
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .faq-item.reveal {
+    transform: translateY(16px);
+  }
+
+  #box.box-intro {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  #box.box-intro.is-visible {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.7s cubic-bezier(.2,.7,.3,1), transform 0.7s cubic-bezier(.2,.7,.3,1);
+  }
+
+  .share-btn {
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  }
+
+  .share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    background: rgba(255,255,255,0.24);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .reveal.reveal-scale,
+    #box.box-intro {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+    .share-btn:hover {
+      transform: none;
+    }
+  }
+  /* ▲▲ スクロール演出ここまで ▲▲ */
 </style>
 </head>
 <body translate="no" class="notranslate">
+  <div id="scroll-progress"></div>
   <noscript>
     <p>反応速度テスト（Reaction Time Test）を利用するにはJavaScriptを有効にしてください。画面が緑色に変わった瞬間にタップして、あなたの反応速度（リアクションタイム）を測定できます。</p>
   </noscript>
-  <div id="box" role="button" aria-label="Reaction Time Test">
+  <div id="box" class="box-intro" role="button" aria-label="Reaction Time Test">
     <div id="share-bar">
       <button id="install-btn" class="share-btn" type="button" style="display:none;">ホーム画面に追加</button>
       <button id="share-native" class="share-btn" type="button" style="display:none;">共有</button>
@@ -577,12 +645,12 @@
 
   <section id="seo-content" aria-labelledby="seo-heading">
     <div class="seo-inner">
-      <h2 id="seo-heading">反応速度テスト（Reaction Time Test）とは</h2>
-      <p>反応速度テストは、画面の色が変化した瞬間にできるだけ早くタップ（クリック）し、目や耳からの刺激に対して体がどれくらい速く反応できるかを測る無料のオンラインツールです。専用アプリのインストールは不要で、スマートフォン・タブレット・パソコンのブラウザから今すぐ測定できます。測定結果はハイスコアや自己平均としてブラウザ内に保存され、次回アクセス時にも記録を引き継いで確認できます。</p>
+      <h2 id="seo-heading" class="reveal">反応速度テスト（Reaction Time Test）とは</h2>
+      <p class="reveal">反応速度テストは、画面の色が変化した瞬間にできるだけ早くタップ（クリック）し、目や耳からの刺激に対して体がどれくらい速く反応できるかを測る無料のオンラインツールです。専用アプリのインストールは不要で、スマートフォン・タブレット・パソコンのブラウザから今すぐ測定できます。測定結果はハイスコアや自己平均としてブラウザ内に保存され、次回アクセス時にも記録を引き継いで確認できます。</p>
       <p>反応速度（リアクションタイム）は、スポーツや格闘技、eスポーツ、車の運転など、瞬時の判断力が求められる場面で重要な能力の一つとされています。定期的に測定することで、自分の反応速度の変化や体調・集中力の目安を把握するのにも役立ちます。</p>
 
-      <h2>遊び方（3ステップ）</h2>
-      <ol>
+      <h2 class="reveal">遊び方（3ステップ）</h2>
+      <ol class="reveal">
         <li><strong>画面をタップして開始：</strong>青い画面のどこでもよいのでタップまたはクリックすると測定が始まります。</li>
         <li><strong>赤い画面で待つ：</strong>画面が赤色の間はまだ反応するタイミングではありません。フライング（早すぎるタップ）に注意しながら待ちましょう。</li>
         <li><strong>緑色に変わったら即タップ：</strong>画面が緑色に切り替わった瞬間、できるだけ早くタップしてください。その反応時間がミリ秒（ms）単位で表示されます。</li>
@@ -600,9 +668,9 @@
         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
       </div>
 
-      <h2>反応速度の目安</h2>
-      <p>一般的に、視覚的な刺激に対する人間の平均的な反応速度はおよそ200〜250ミリ秒程度とされています。以下は目安の一例です。</p>
-      <table id="seo-table">
+      <h2 class="reveal">反応速度の目安</h2>
+      <p class="reveal">一般的に、視覚的な刺激に対する人間の平均的な反応速度はおよそ200〜250ミリ秒程度とされています。以下は目安の一例です。</p>
+      <table id="seo-table" class="reveal reveal-scale">
         <thead>
           <tr><th>反応速度</th><th>目安の評価</th></tr>
         </thead>
@@ -616,30 +684,30 @@
       </table>
       <p>数値はあくまで目安であり、年齢・体調・使用しているデバイスやディスプレイの反応速度（遅延）によっても結果は変動します。同じ条件で複数回測定し、平均値で比較するのがおすすめです。</p>
 
-      <h2>反応速度を上げるコツ</h2>
-      <h3>1. 変化した「後」に反応する意識</h3>
-      <p>画面の色の変化そのものを予測しようとするのではない、実際に緑に変化したのを確認した「後」に、指を動かす意識を持つことで安定したタイムが出やすくなります。</p>
+      <h2 class="reveal">反応速度を上げるコツ</h2>
+      <h3 class="reveal">1. 変化した「後」に反応する意識</h3>
+      <p class="reveal">画面の色の変化そのものを予測しようとするのではない、実際に緑に変化したのを確認した「後」に、指を動かす意識を持つことで安定したタイムが出やすくなります。</p>
       
-      <h3>2. リラックスして構える</h3>
-      <p>肩や指に過度な力が入っていると、かえって初動が遅れてしまいます。リラックスした状態で構えるのがコツです。</p>
+      <h3 class="reveal">2. リラックスして構える</h3>
+      <p class="reveal">肩や指に過度な力が入っていると、かえって初動が遅れてしまいます。リラックスした状態で構えるのがコツです。</p>
       
-      <h3>3. ベストな体調のときに測定する</h3>
-      <p>睡眠不足や疲労が溜まっている時は、脳の処理速度が落ちるため反応速度も著しく低下します。体調の良いタイミングを意識して測定してみましょう。</p>
+      <h3 class="reveal">3. ベストな体調のときに測定する</h3>
+      <p class="reveal">睡眠不足や疲労が溜まっている時は、脳の処理速度が落ちるため反応速度も著しく低下します。体調の良いタイミングを意識して測定してみましょう。</p>
 
-      <h2>よくある質問</h2>
-      <div class="faq-item">
+      <h2 class="reveal">よくある質問</h2>
+      <div class="faq-item reveal" style="transition-delay:0s">
         <h3>反応速度テストは無料で使えますか？</h3>
         <p>はい、完全無料でご利用いただけます。会員登録やアプリのインストールも不要です。</p>
       </div>
-      <div class="faq-item">
+      <div class="faq-item reveal" style="transition-delay:0.1s">
         <h3>測定結果はどこに保存されますか？</h3>
         <p>ハイスコアや試行回数などの記録は、お使いのブラウザ内（ローカルストレージ）にのみ保存されます。外部サーバーへの送信は行われません。</p>
       </div>
-      <div class="faq-item">
+      <div class="faq-item reveal" style="transition-delay:0.2s">
         <h3>スマートフォンでも使えますか？</h3>
         <p>はい、スマートフォン・タブレット・パソコンのいずれのブラウザからもご利用いただけます。ホーム画面に追加すればアプリのように起動することも可能です。</p>
       </div>
-      <div class="faq-item">
+      <div class="faq-item reveal" style="transition-delay:0.3s">
         <h3>結果が毎回ばらつくのはなぜですか？</h3>
         <p>反応速度は体調や集中力、デバイスの表示遅延などによって変動します。複数回測定し、平均値で比較することをおすすめします。</p>
         
@@ -1061,10 +1129,67 @@
 
   box.addEventListener('pointerdown', onGameTap, { passive: false });
 
+  function animateCountUp(el, endText) {
+    if (!el) return;
+    const match = endText.match(/-?\d+/);
+    if (!match || prefersReducedMotion) {
+      el.textContent = endText;
+      return;
+    }
+    const end = parseInt(match[0], 10);
+    const suffix = endText.slice(match.index + match[0].length);
+    const prefix = endText.slice(0, match.index);
+    const duration = 800;
+    const startTs = performance.now();
+    function tick(now) {
+      const p = Math.min((now - startTs) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = prefix + Math.round(end * eased) + suffix;
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // スクロール進捗バー
+  const scrollProgressEl = document.getElementById('scroll-progress');
+  function updateScrollProgress() {
+    if (!scrollProgressEl) return;
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const ratio = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    scrollProgressEl.style.width = ratio + '%';
+  }
+  window.addEventListener('scroll', updateScrollProgress, { passive: true });
+
+  // スクロールで要素をフェードイン表示
+  const revealTargets = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && !prefersReducedMotion) {
+    const revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    revealTargets.forEach(function (el) { revealObserver.observe(el); });
+  } else {
+    revealTargets.forEach(function (el) { el.classList.add('is-visible'); });
+  }
+
   loadStats();
   renderStats();
+  animateCountUp(bestVal, bestVal.textContent);
+  animateCountUp(worldVal, worldVal.textContent);
+  animateCountUp(avgVal, avgVal.textContent);
   updateAdaptiveUi();
   setIdleScreen();
+  updateScrollProgress();
+
+  // ゲーム画面の初回表示アニメーション
+  requestAnimationFrame(function () {
+    box.classList.add('is-visible');
+  });
 
   let resizeTimer = null;
   window.addEventListener('resize', function () {
