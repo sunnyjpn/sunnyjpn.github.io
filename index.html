@@ -1835,12 +1835,10 @@
     vibrateFeedback(accepted && isNewBest ? [30, 40, 30] : 25);
 
     if (accepted) {
-      setTimeout(function () {
-        try {
-          resultSound.currentTime = 0;
-          resultSound.play().catch(function () {});
-        } catch (e) {}
-      }, 180);
+      try {
+        resultSound.currentTime = 0;
+        resultSound.play().catch(function () {});
+      } catch (e) {}
     }
 
     box.style.backgroundColor = COLOR_RESULT;
