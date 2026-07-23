@@ -47,10 +47,12 @@ self.addEventListener('fetch', function (event) {
   event.respondWith(
     caches.match(req).then(function (cached) {
       const network = fetch(req).then(function (res) {
-        if (res && res.ok) {
+        // status 206（Rangeリクエストへの部分レスポンス）はCache APIでput不可のため、
+        // ここで弾かないと "Failed to execute 'put' on 'Cache'" が毎回投げられる
+        if (res && res.ok && res.status !== 206) {
           const clone = res.clone();
           caches.open(CACHE_NAME).then(function (cache) {
-            cache.put(req, clone);
+            cache.put(req, clone).catch(function () {});
           });
         }
         return res;

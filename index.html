@@ -2646,7 +2646,7 @@
     const nickname = input.value.trim().slice(0, 16);
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中…'; }
     try {
-      await setDoc(doc(db, 'users', currentUid), { nickname: nickname, updatedAt: serverTimestamp() }, { merge: true });
+      await setDoc(doc(db, 'users', currentUid), { nickname: nickname }, { merge: true });
       if (saveBtn) saveBtn.textContent = '保存しました';
     } catch (e) {
       console.warn('[RT] ニックネームの保存に失敗しました', e);
@@ -2690,7 +2690,7 @@
             const codeSnap = await tx.get(codeRef);
             if (codeSnap.exists()) return false;
             tx.set(codeRef, { uid: uid, createdAt: serverTimestamp() });
-            tx.set(userRef, { friendCode: code, updatedAt: serverTimestamp() }, { merge: true });
+            tx.set(userRef, { friendCode: code }, { merge: true });
             return true;
           });
           if (assigned) return code;

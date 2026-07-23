@@ -11,6 +11,12 @@ const db = getFirestore();
 //     Firebase App Check の有効なトークンを伴わないリクエストは
 //     関数の中身が実行される前にFirebase側で拒否される
 //     （Bot・スクリプトからの直接呼び出し・外部アプリからの流用を防止）。
+// 注：App Checkはクライアント側（index.html）で現在無効化中（プレースホルダーの
+//     reCAPTCHA v3サイトキーのままでは有効なトークンを取得できないため）。
+//     それに合わせてこちら（Functions側）も enforceAppCheck: false にしてある。
+//     クライアント側を有効化する場合は、正しいサイトキーに差し替えた上で
+//     こちらも true に戻すこと（片方だけ有効化すると、startRound / submitScore が
+//     全滅する＝反応時間がクラウドに一切保存できなくなるので要注意）。
 const MIN_MS = 50;                 // 許容する反応時間の下限
 const MAX_MS = 1000;               // 許容する反応時間の上限
 const MIN_WAIT_FLOOR_MS = 1500;    // 実際の待機は2000〜5000msあるため、安全マージンを引いた最低ライン
@@ -26,7 +32,7 @@ const REPEAT_FLAG_THRESHOLD = 6;   // 直近8件中6件以上が同一(丸め一
  * armedAt はサーバー時刻（Admin SDKのserverTimestamp）で記録するため、
  * クライアント側で改ざんすることはできない。
  */
-exports.startRound = onCall({ enforceAppCheck: true }, async (request) => {
+exports.startRound = onCall({ enforceAppCheck: false }, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'ログインが必要です');
   }
@@ -50,7 +56,7 @@ exports.startRound = onCall({ enforceAppCheck: true }, async (request) => {
  *   startRound の呼び出し自体を偽装・省略することもできないため、
  *   「for文で submitScore を1万回呼ぶ」ような攻撃はこの時点で全て拒否される。
  */
-exports.submitScore = onCall({ enforceAppCheck: true }, async (request) => {
+exports.submitScore = onCall({ enforceAppCheck: false }, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'ログインが必要です');
   }
