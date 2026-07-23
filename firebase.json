@@ -1,6 +1,9 @@
 {
   "firestore": {
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "predeploy": [
+      "node scripts/check-firestore-fields.js"
+    ]
   },
   "functions": [
     {

@@ -29,14 +29,15 @@ service cloud.firestore {
       }
 
       // 統計フィールド（bestScore / attemptCount / totalTimeSum / recentHistory /
-      // recentRawMs / suspicious / createdAt / updatedAt）は、
-      // Cloud Functions（startRound / submitScore）内の Admin SDK からのみ書き込む。
+      // recentRawMs / suspicious / tooFastStreak / bannedUntil / friendCode /
+      // friendCodeAttemptAt / lastFriendRequestAt / pendingSentCount /
+      // createdAt / updatedAt）は、Cloud Functions内の Admin SDK からのみ書き込む。
       // Admin SDK はセキュリティルールの対象外のため、ここで許可する必要はない。
       // むしろクライアントSDKからは絶対にこれらのフィールドへ触れさせない
       // （直接書き込みができてしまうと、レート制限もプレイ実在性の検証も
-      //   一切通さずにランキングを荒らせてしまうため）。
+      //   一切通さずにランキング・フレンド機能を荒らせてしまうため）。
       function onlyTouchesClientFields(before) {
-        return request.resource.data.diff(before).affectedKeys().hasOnly(['nickname', 'friendCode']);
+        return request.resource.data.diff(before).affectedKeys().hasOnly(['nickname']);
       }
 
       // ニックネームは16文字以内の文字列（未設定なら空文字も許可）
@@ -45,70 +46,30 @@ service cloud.firestore {
           || (afterData().nickname is string && afterData().nickname.size() <= 16);
       }
 
-      // friendCode は SUN-XXXXXX 形式の文字列。
-      // 一度発行したら書き換え不可（friendCodes コレクションとの整合性を保つため）
-      function friendCodeIsValid() {
-        return !('friendCode' in afterData())
-          || (
-            afterData().friendCode is string
-            && afterData().friendCode.matches('^SUN-[A-Z0-9]{6}$')
-            && (
-              isNewDoc()
-              || !('friendCode' in beforeData())
-              || afterData().friendCode == beforeData().friendCode
-            )
-          );
-      }
-
       allow read: if true;
 
-      // クライアント（ブラウザ）からの直接書き込みは nickname / friendCode のみ許可。
-      // スコア（bestScore 等）は Cloud Functions 経由でしか更新できない。
+      // クライアント（ブラウザ）からの直接書き込みは nickname のみ許可。
+      // friendCode・スコア等は Cloud Functions 経由でしか更新できない。
       allow create: if isOwner()
-        && request.resource.data.keys().hasOnly(['nickname', 'friendCode'])
-        && nicknameIsValid()
-        && friendCodeIsValid();
+        && request.resource.data.keys().hasOnly(['nickname'])
+        && nicknameIsValid();
 
       allow update: if isOwner()
         && onlyTouchesClientFields(resource.data)
-        && nicknameIsValid()
-        && friendCodeIsValid();
+        && nicknameIsValid();
 
       allow delete: if false;
 
       // ----------------------------------------------------------------
       // users/{uid}/friendRequests/{fromUid}
       //   - 受信者(uid)本人のみ閲覧できる
-      //   - 削除は 受信者(uid)本人（承認/拒否）または 送信者(fromUid)本人（キャンセル）が行える
-      //   - 送信は fromUid 本人のみが、自分の uid をキーにしたリクエストとして作成できる
-      //   - 既にリクエストが存在する場合は上書き不可（連投・改ざん防止）
-      //   - 送信できるフィールドを厳密に制限する
+      //   - 作成・削除はすべて Cloud Functions（Admin SDK）経由のみ。
+      //     クライアントSDKからの直接書き込みはレート制限・不整合防止の
+      //     チェックを迂回できてしまうため一切禁止する。
       // ----------------------------------------------------------------
       match /friendRequests/{fromUid} {
-
-        function requestFieldsAreValid() {
-          return request.resource.data.keys().hasOnly(['fromUid', 'fromNickname', 'fromCode', 'createdAt', 'status'])
-            && request.resource.data.fromUid == fromUid
-            && request.resource.data.fromUid == request.auth.uid
-            && (!('fromNickname' in request.resource.data)
-                || (request.resource.data.fromNickname is string && request.resource.data.fromNickname.size() <= 16))
-            && (!('fromCode' in request.resource.data)
-                || (request.resource.data.fromCode is string && request.resource.data.fromCode.size() <= 16));
-        }
-
         allow read: if request.auth != null && request.auth.uid == uid;
-
-        // 受信者（承認/拒否）・送信者（キャンセル）のどちらからでも削除できる
-        allow delete: if request.auth != null
-          && (request.auth.uid == uid || request.auth.uid == fromUid);
-
-        allow create: if request.auth != null
-          && request.auth.uid == fromUid
-          && fromUid != uid
-          && resource == null
-          && requestFieldsAreValid();
-
-        allow update: if false;
+        allow create, update, delete: if false;
       }
 
       // ----------------------------------------------------------------
@@ -117,54 +78,22 @@ service cloud.firestore {
       //     相手の friendRequests は受信者しか読めないため、
       //     「自分が誰に送信中か」を確認する手段としてこちらを用意している
       //     （重複送信の防止・送信済みリクエストのキャンセルUIに使用）。
-      //   - 作成は送信者本人（uid）のみ。
-      //   - 削除は 送信者本人（uid, キャンセル）または 受信者（toUid, 承認/拒否に連動した後片付け）が行える。
+      //   - 作成・削除は Cloud Functions（Admin SDK）経由のみ。
       // ----------------------------------------------------------------
       match /sentFriendRequests/{toUid} {
-
-        function sentFieldsAreValid() {
-          return request.resource.data.keys().hasOnly(['toUid', 'createdAt'])
-            && request.resource.data.toUid == toUid
-            && toUid != uid;
-        }
-
         allow read: if request.auth != null && request.auth.uid == uid;
-
-        allow create: if request.auth != null
-          && request.auth.uid == uid
-          && resource == null
-          && sentFieldsAreValid();
-
-        allow delete: if request.auth != null
-          && (request.auth.uid == uid || request.auth.uid == toUid);
-
-        allow update: if false;
+        allow create, update, delete: if false;
       }
 
       // ----------------------------------------------------------------
       // users/{uid}/friends/{friendUid}
-      //   - 相互フレンド関係。承認処理で自分側・相手側の双方に1件ずつ作成される
-      //   - 作成・削除は「uid本人」または「friendUid本人」のいずれかが行える
-      //     （承認した側が相手のフレンドリストにも書き込む必要があるため）
-      //   - 更新（フィールド改変）は不可。関係の有無だけを表すシンプルな存在フラグとして扱う
+      //   - 相互フレンド関係。承認処理（Cloud Functions）で自分側・相手側の
+      //     双方に1件ずつ作成される。
+      //   - 作成・削除は Cloud Functions（Admin SDK）経由のみ。
       // ----------------------------------------------------------------
       match /friends/{friendUid} {
-
-        function friendFieldsAreValid() {
-          return request.resource.data.keys().hasOnly(['since'])
-            && friendUid != uid;
-        }
-
         allow read: if request.auth != null && request.auth.uid == uid;
-
-        allow create: if request.auth != null
-          && (request.auth.uid == uid || request.auth.uid == friendUid)
-          && friendFieldsAreValid();
-
-        allow delete: if request.auth != null
-          && (request.auth.uid == uid || request.auth.uid == friendUid);
-
-        allow update: if false;
+        allow create, update, delete: if false;
       }
 
       // ----------------------------------------------------------------
@@ -181,32 +110,12 @@ service cloud.firestore {
     // ------------------------------------------------------------------
     // friendCodes/{code}
     //   - フレンドID → uid の逆引き用。誰でも読み取り可（ID検索のため）
-    //   - 作成は「本人が」「自分の uid に紐づくコードとして」1回だけ発行できる
-    //     （users/{uid}.friendCode が未設定の場合のみ発行を許可し、二重発行を防止）
-    //   - 更新・削除は一切不可（IDの乗っ取り・使い回しを防止）
+    //   - 発行は Cloud Functions（ensureFriendCode, Admin SDK）経由のみ。
+    //     クライアントSDKからの直接作成は一切禁止（二重発行・不整合の防止）。
     // ------------------------------------------------------------------
     match /friendCodes/{code} {
-
-      function codeFormatIsValid() {
-        return code.matches('^SUN-[A-Z0-9]{6}$');
-      }
-
-      function ownerHasNoCodeYet() {
-        let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-        return !userDoc.data.keys().hasAny(['friendCode'])
-          || userDoc.data.friendCode == null
-          || userDoc.data.friendCode == '';
-      }
-
       allow read: if true;
-
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
-        && request.resource.data.uid == request.auth.uid
-        && codeFormatIsValid()
-        && ownerHasNoCodeYet();
-
-      allow update, delete: if false;
+      allow create, update, delete: if false;
     }
   }
 }

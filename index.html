@@ -10,7 +10,7 @@
      GitHub PagesはカスタムHTTPヘッダーを設定できないため、metaタグでの指定になる
      （metaタグではframe-ancestors / report-uri / sandbox は無効。より厳密に運用したい場合は
      Cloudflare Pages・Netlify等、レスポンスヘッダーを設定できるホスティングへの移行を検討のこと）。
-     このサイトはFirebase（Auth/Firestore/Functions/App Check）・Google AdSense・
+     このサイトはFirebase（Auth/Firestore/Functions）・Google AdSense・
      Firebase Analytics・Cloudflare Beaconを利用しているため、それらに必要なドメインのみ許可している。
      注意：既存のインラインscript（type="module"含む）を動かすため script-src に 'unsafe-inline' を
      含めている。これがある限りCSPは「インラインスクリプト注入」自体は防げない
@@ -1475,7 +1475,7 @@
   const bestRecordFlash = document.getElementById('best-record-flash');
 
   const RECENT_HISTORY_MAX = 5;
-  const MIN_REACTION_MS = 80;
+  const MIN_REACTION_MS = 100;
   const MAX_REACTION_MS = 3000;
   const ROUND_EARLY_TOLERANCE_MS = 24;
   const SUSPICIOUS_LIMIT = 3;
@@ -2414,12 +2414,9 @@
     getDoc,
     setDoc,
     collection,
-    getDocs,
-    runTransaction,
-    serverTimestamp
+    getDocs
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
   import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
-  // import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-check.js"; // App Check無効化中
   import { getAnalytics, isSupported as analyticsIsSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
 
   const firebaseConfig = {
@@ -2434,23 +2431,6 @@
 
   const app = initializeApp(firebaseConfig);
 
-  // ▼ Firebase App Check（reCAPTCHA v3）
-  // Bot・スクリプトからの直接アクセスや、このアプリ以外からのAPI流用を減らすための検証。
-  // サイトキーは Firebase Console →「App Check」→ アプリを登録（reCAPTCHA v3）で発行したものに
-  // 差し替えること（下記はプレースホルダーのため、このままでは機能しない）。
-  // ローカル開発時は self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; を初期化前に設定すると
-  // デバッグトークンが発行され、Console側に登録すればApp Check有効時でも動作確認できる。
-  // ▼▼ App Check：一時的に無効化中 ▼▼
-  // 理由：プレースホルダーのサイトキー('YOUR_RECAPTCHA_V3_SITE_KEY')のまま有効化されており、
-  // すべての認証・Firestoreリクエストが不正判定され失敗していたため。
-  // 正しいreCAPTCHA v3サイトキーを発行してから再度有効化すること。
-  //
-  // initializeAppCheck(app, {
-  //   provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_V3_SITE_KEY'),
-  //   isTokenAutoRefreshEnabled: true
-  // });
-  // ▲▲ App Checkここまで ▲▲
-
   const auth = getAuth(app);
   const db = getFirestore(app);
   const functions = getFunctions(app);
@@ -2458,6 +2438,17 @@
   analyticsIsSupported().then(function (supported) {
     if (supported) getAnalytics(app);
   }).catch(function () {});
+
+  // ▼▼ クライアント→Firestore 直接書き込みフィールドの許可リスト ▼▼
+  // firestore.rules 側の各 hasOnly([...]) と1対1で対応させること。
+  // ここを更新したら firestore.rules も同時に更新し、
+  // `node scripts/check-firestore-fields.js` でズレがないか確認する
+  // （このスクリプトは firestore.rules をパースして下記オブジェクトと突き合わせる）。
+  // Cloud Functions（Admin SDK）専用フィールド（bestScore 等）はここには含めない。
+  const FIRESTORE_CLIENT_FIELDS = {
+    'users/{uid}': ['nickname']
+  };
+  // ▲▲ フィールド許可リストここまで ▲▲
 
   let currentUid = null;
   let isSyncing = false;
@@ -2492,6 +2483,11 @@
   // を検証したうえでユーザーのスコアを更新できる。
   const startRoundCallable = httpsCallable(functions, 'startRound');
   const submitScoreCallable = httpsCallable(functions, 'submitScore');
+  const ensureFriendCodeCallable = httpsCallable(functions, 'ensureFriendCode');
+  const sendFriendRequestCallable = httpsCallable(functions, 'sendFriendRequest');
+  const cancelFriendRequestCallable = httpsCallable(functions, 'cancelFriendRequest');
+  const acceptFriendRequestCallable = httpsCallable(functions, 'acceptFriendRequest');
+  const declineFriendRequestCallable = httpsCallable(functions, 'declineFriendRequest');
 
   // ラウンド開始をサーバーへ申告し、ワンタイムトークンを発行してもらう
   async function requestRoundToken() {
@@ -2629,49 +2625,24 @@
   }
 
   // ▼▼ フレンド機能 ▼▼
-  const FRIEND_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 紛らわしい文字(0,O,1,I)を除外
+  // 発行・送信・承認・拒否・キャンセルはすべてサーバー側（Cloud Functions）で行う。
+  // クライアントSDKからの直接Firestore書き込みは firestore.rules で禁止済み
+  // （レート制限・不整合防止のチェックを迂回できないようにするため）。
   let friendsUiLoaded = false;
-
-  function generateCandidateFriendCode() {
-    let s = '';
-    for (let i = 0; i < 6; i++) {
-      s += FRIEND_CODE_CHARS.charAt(Math.floor(Math.random() * FRIEND_CODE_CHARS.length));
-    }
-    return 'SUN-' + s;
-  }
 
   function normalizeFriendCodeInput(raw) {
     return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
   }
 
-  // 未発行なら、衝突しないユニークなフレンドIDを新規発行する
-  async function ensureFriendCode(uid) {
+  // 未発行なら、衝突しないユニークなフレンドIDをサーバー側で新規発行する
+  async function ensureFriendCode() {
     try {
-      const userRef = doc(db, 'users', uid);
-      const snap = await getDoc(userRef);
-      if (snap.exists() && typeof snap.data().friendCode === 'string' && snap.data().friendCode) {
-        return snap.data().friendCode;
-      }
-      for (let attempt = 0; attempt < 8; attempt++) {
-        const code = generateCandidateFriendCode();
-        const codeRef = doc(db, 'friendCodes', code);
-        try {
-          const assigned = await runTransaction(db, async function (tx) {
-            const codeSnap = await tx.get(codeRef);
-            if (codeSnap.exists()) return false;
-            tx.set(codeRef, { uid: uid, createdAt: serverTimestamp() });
-            tx.set(userRef, { friendCode: code }, { merge: true });
-            return true;
-          });
-          if (assigned) return code;
-        } catch (e) {
-          console.warn('[RT] フレンドID発行の再試行', e);
-        }
-      }
+      const res = await ensureFriendCodeCallable();
+      return (res.data && res.data.friendCode) || null;
     } catch (e) {
       console.warn('[RT] フレンドIDの発行に失敗しました', e);
+      return null;
     }
-    return null;
   }
 
   async function findUidByFriendCode(code) {
@@ -2696,34 +2667,14 @@
 
   async function sendFriendRequest(toUid) {
     if (!currentUid || !toUid || toUid === currentUid) return { ok: false, reason: 'invalid' };
-    if (await isAlreadyFriend(currentUid, toUid)) return { ok: false, reason: 'already-friend' };
-
-    const requestRef = doc(db, 'users', toUid, 'friendRequests', currentUid);
-    const sentRef = doc(db, 'users', currentUid, 'sentFriendRequests', toUid);
-
     try {
-      const myDoc = await getDoc(doc(db, 'users', currentUid));
-      const myData = myDoc.exists() ? myDoc.data() : {};
-
-      const result = await runTransaction(db, async function (tx) {
-        // トランザクション内で再確認することで、連打などによる二重送信を防ぐ
-        const sentSnap = await tx.get(sentRef);
-        if (sentSnap.exists()) return { ok: false, reason: 'already-pending' };
-
-        tx.set(requestRef, {
-          fromUid: currentUid,
-          fromNickname: typeof myData.nickname === 'string' ? myData.nickname : '',
-          fromCode: typeof myData.friendCode === 'string' ? myData.friendCode : '',
-          createdAt: serverTimestamp(),
-          status: 'pending'
-        });
-        tx.set(sentRef, { toUid: toUid, createdAt: serverTimestamp() });
-        return { ok: true };
-      });
-
-      return result;
+      const res = await sendFriendRequestCallable({ toUid: toUid });
+      return res.data;
     } catch (e) {
       console.warn('[RT] フレンドリクエストの送信に失敗しました', e);
+      if (e && e.code === 'functions/resource-exhausted') {
+        return { ok: false, reason: 'rate-limited', message: e.message };
+      }
       return { ok: false, reason: 'error' };
     }
   }
@@ -2732,12 +2683,7 @@
   async function cancelFriendRequest(toUid) {
     if (!currentUid || !toUid) return;
     try {
-      const requestRef = doc(db, 'users', toUid, 'friendRequests', currentUid);
-      const sentRef = doc(db, 'users', currentUid, 'sentFriendRequests', toUid);
-      await runTransaction(db, async function (tx) {
-        tx.delete(requestRef);
-        tx.delete(sentRef);
-      });
+      await cancelFriendRequestCallable({ toUid: toUid });
     } catch (e) {
       console.warn('[RT] フレンドリクエストのキャンセルに失敗しました', e);
     }
@@ -2746,19 +2692,7 @@
   async function acceptFriendRequest(fromUid) {
     if (!currentUid || !fromUid) return;
     try {
-      const myFriendRef = doc(db, 'users', currentUid, 'friends', fromUid);
-      const otherFriendRef = doc(db, 'users', fromUid, 'friends', currentUid);
-      const requestRef = doc(db, 'users', currentUid, 'friendRequests', fromUid);
-      const senderSentRef = doc(db, 'users', fromUid, 'sentFriendRequests', currentUid);
-
-      // 1つのトランザクションにまとめることで、
-      // 「片側だけ友達になった／リクエストだけ消えて未成立」といった不整合を防ぐ
-      await runTransaction(db, async function (tx) {
-        tx.set(myFriendRef, { since: serverTimestamp() }, { merge: true });
-        tx.set(otherFriendRef, { since: serverTimestamp() }, { merge: true });
-        tx.delete(requestRef);
-        tx.delete(senderSentRef);
-      });
+      await acceptFriendRequestCallable({ fromUid: fromUid });
     } catch (e) {
       console.warn('[RT] フレンドリクエストの承認に失敗しました', e);
     }
@@ -2767,12 +2701,7 @@
   async function declineFriendRequest(fromUid) {
     if (!currentUid || !fromUid) return;
     try {
-      const requestRef = doc(db, 'users', currentUid, 'friendRequests', fromUid);
-      const senderSentRef = doc(db, 'users', fromUid, 'sentFriendRequests', currentUid);
-      await runTransaction(db, async function (tx) {
-        tx.delete(requestRef);
-        tx.delete(senderSentRef);
-      });
+      await declineFriendRequestCallable({ fromUid: fromUid });
     } catch (e) {
       console.warn('[RT] フレンドリクエストの削除に失敗しました', e);
     }
@@ -2791,7 +2720,7 @@
     const codeEl = document.getElementById('friend-my-code');
     if (!codeEl || !currentUid) return;
     codeEl.textContent = '発行中…';
-    const code = await ensureFriendCode(currentUid);
+    const code = await ensureFriendCode();
     codeEl.textContent = code || '取得に失敗しました';
   }
 
@@ -3134,6 +3063,9 @@
         statusEl.classList.add('is-error');
       } else if (result.reason === 'already-friend') {
         statusEl.textContent = 'すでにフレンドです';
+        statusEl.classList.add('is-error');
+      } else if (result.reason === 'rate-limited') {
+        statusEl.textContent = result.message || '送信間隔が短すぎます。しばらく待ってから再度お試しください';
         statusEl.classList.add('is-error');
       } else {
         statusEl.textContent = 'リクエストの送信に失敗しました';

@@ -241,7 +241,6 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-    // import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-check.js"; // App Check無効化中
     import {
       getAuth,
       GoogleAuthProvider,
@@ -261,12 +260,6 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    // ▼▼ App Check：一時的に無効化中（理由はindex.htmlのコメント参照） ▼▼
-    // initializeAppCheck(app, {
-    //   provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_V3_SITE_KEY'),
-    //   isTokenAutoRefreshEnabled: true
-    // });
-    // ▲▲ App Checkここまで ▲▲
     const auth = getAuth(app);
 
     const googleBtn = document.getElementById('google-btn');
