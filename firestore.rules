@@ -31,7 +31,10 @@ service cloud.firestore {
       // 統計フィールド（bestScore / attemptCount / totalTimeSum / recentHistory /
       // recentRawMs / suspicious / tooFastStreak / bannedUntil / friendCode /
       // friendCodeAttemptAt / lastFriendRequestAt / pendingSentCount /
-      // createdAt / updatedAt）は、Cloud Functions内の Admin SDK からのみ書き込む。
+      // photoURL / createdAt / updatedAt）は、Cloud Functions内の Admin SDK からのみ書き込む。
+      // photoURL は syncProfile（Admin SDK）が、検証済みIDトークンのクレームから設定する。
+      // クライアントが任意の画像URLを自称できてしまうと、フィッシングや不快な画像の
+      // 埋め込みに悪用され得るため、クライアントSDKからの直接書き込みは対象外のままにする。
       // Admin SDK はセキュリティルールの対象外のため、ここで許可する必要はない。
       // むしろクライアントSDKからは絶対にこれらのフィールドへ触れさせない
       // （直接書き込みができてしまうと、レート制限もプレイ実在性の検証も
@@ -109,12 +112,15 @@ service cloud.firestore {
 
     // ------------------------------------------------------------------
     // friendCodes/{code}
-    //   - フレンドID → uid の逆引き用。誰でも読み取り可（ID検索のため）
+    //   - フレンドID → uid の逆引き用。
+    //   - 検索は Cloud Functions（lookupFriendCode）経由に一本化したため、
+    //     クライアントSDKからの直接読み取りは不要かつ禁止する
+    //     （不要な直接クエリ経路を残さないことで攻撃面を減らす）。
     //   - 発行は Cloud Functions（ensureFriendCode, Admin SDK）経由のみ。
     //     クライアントSDKからの直接作成は一切禁止（二重発行・不整合の防止）。
     // ------------------------------------------------------------------
     match /friendCodes/{code} {
-      allow read: if true;
+      allow read: if false;
       allow create, update, delete: if false;
     }
   }

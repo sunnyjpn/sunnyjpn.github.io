@@ -30,6 +30,50 @@ function generateFriendCode() {
   return 'SUN-' + code;
 }
 
+// フレンドID自体の書式チェック（サーバー側でも必ず検証する。クライアントの正規化に依存しない）
+function isValidFriendCodeFormat(code) {
+  return typeof code === 'string' && /^SUN-[A-Z2-9]{6}$/.test(code);
+}
+
+/**
+ * 表示名・アイコン画像の同期。
+ * Googleアカウントの displayName / photoURL は、なりすまし防止のため
+ * クライアントからの生値ではなく、Firebase Authが検証済みの
+ * request.auth.token（IDトークンのクレーム）からのみ取得する。
+ * ・photoURL はここでしか書き込めない（Admin SDK経由のみ）ので、
+ *   firestore.rules 側でクライアントに photoURL への書き込みを許可する必要は無い。
+ * ・nickname は「まだ一度も自分で設定していない」場合のみ、Googleの表示名で初期値を埋める
+ *   （ユーザーが既に設定済みのニックネームを勝手に上書きしない）。
+ */
+exports.syncProfile = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'ログインが必要です');
+  }
+  const uid = request.auth.uid;
+  const token = request.auth.token || {};
+  const photoURL = typeof token.picture === 'string' ? token.picture : null;
+  const displayName = typeof token.name === 'string' ? token.name.slice(0, 16) : null;
+
+  const userRef = db.collection('users').doc(uid);
+  const snap = await userRef.get();
+  const existing = snap.exists ? snap.data() : {};
+
+  const payload = {
+    photoURL: photoURL,
+    updatedAt: FieldValue.serverTimestamp()
+  };
+  // ニックネーム未設定時のみ、Googleの表示名で初期値を入れる
+  if (displayName && (typeof existing.nickname !== 'string' || !existing.nickname)) {
+    payload.nickname = displayName;
+  }
+  if (!snap.exists) {
+    payload.createdAt = FieldValue.serverTimestamp();
+  }
+
+  await userRef.set(payload, { merge: true });
+  return { ok: true, photoURL: photoURL };
+});
+
 /**
  * 自分のフレンドIDを取得する。未発行なら、他と衝突しないIDをサーバー側で新規発行する。
  * friendCode は Admin SDK からのみ書き込める設計（firestore.rules参照）なので、
@@ -80,6 +124,47 @@ exports.ensureFriendCode = onCall(async (request) => {
   }
 
   throw new HttpsError('resource-exhausted', 'フレンドIDの発行に失敗しました。もう一度お試しください');
+});
+
+/**
+ * フレンドIDからユーザーを検索する。
+ * 以前はクライアントSDKから friendCodes/{code} を直接読んでいたが、
+ * ・存在しないコレクション/古いキャッシュを掴んだ場合にエラー原因が分かりにくい
+ * ・Firestoreの読み取り課金がクライアント数だけ発生する
+ * といった問題があったため、Cloud Functions経由の検索に一本化する。
+ * 併せて、書式が不正なコードは早期に弾いて分かりやすいエラーを返す。
+ */
+exports.lookupFriendCode = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'ログインが必要です');
+  }
+  const rawCode = (request.data && request.data.code) || '';
+  const code = String(rawCode).trim().toUpperCase();
+
+  if (!isValidFriendCodeFormat(code)) {
+    throw new HttpsError('invalid-argument', 'フレンドIDの形式が正しくありません（例: SUN-AB23CD）');
+  }
+
+  const codeSnap = await db.collection('friendCodes').doc(code).get();
+  if (!codeSnap.exists) {
+    throw new HttpsError('not-found', 'そのフレンドIDのユーザーは見つかりませんでした');
+  }
+  const targetUid = codeSnap.data().uid;
+  if (!targetUid) {
+    throw new HttpsError('not-found', 'そのフレンドIDのユーザーは見つかりませんでした');
+  }
+  if (targetUid === request.auth.uid) {
+    throw new HttpsError('invalid-argument', '自分自身のフレンドIDです');
+  }
+
+  const userSnap = await db.collection('users').doc(targetUid).get();
+  const userData = userSnap.exists ? userSnap.data() : {};
+
+  return {
+    uid: targetUid,
+    nickname: (typeof userData.nickname === 'string' && userData.nickname) ? userData.nickname : '名無し',
+    photoURL: (typeof userData.photoURL === 'string' && userData.photoURL) ? userData.photoURL : null
+  };
 });
 
 /**
@@ -278,6 +363,7 @@ exports.sendFriendRequest = onCall(async (request) => {
   batch.set(incomingRef, {
     fromNickname: (typeof userData.nickname === 'string' && userData.nickname) ? userData.nickname : null,
     fromCode: (typeof userData.friendCode === 'string' && userData.friendCode) ? userData.friendCode : null,
+    fromPhotoURL: (typeof userData.photoURL === 'string' && userData.photoURL) ? userData.photoURL : null,
     createdAt: FieldValue.serverTimestamp()
   });
   batch.set(sentRef, { createdAt: FieldValue.serverTimestamp() });

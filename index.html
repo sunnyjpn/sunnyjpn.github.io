@@ -942,6 +942,20 @@
   .friend-avatar {
     font-size: 15px;
     flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .friend-avatar img,
+  .friend-rank-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
   }
 
   .friend-name {
@@ -969,10 +983,26 @@
   }
 
   .friend-rank-medal {
-    font-size: 15px;
-    width: 22px;
+    font-size: 12px;
+    font-weight: 700;
+    width: 30px;
     flex-shrink: 0;
     text-align: center;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .friend-rank-medal.is-top1 { color: #ffd76a; font-size: 13px; }
+  .friend-rank-medal.is-top2 { color: #d9d9e6; font-size: 13px; }
+  .friend-rank-medal.is-top3 { color: #e0ab74; font-size: 13px; }
+
+  .friend-rank-avatar {
+    font-size: 15px;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .friend-req-btn {
@@ -2497,7 +2527,9 @@
   // を検証したうえでユーザーのスコアを更新できる。
   const startRoundCallable = httpsCallable(functions, 'startRound');
   const submitScoreCallable = httpsCallable(functions, 'submitScore');
+  const syncProfileCallable = httpsCallable(functions, 'syncProfile');
   const ensureFriendCodeCallable = httpsCallable(functions, 'ensureFriendCode');
+  const lookupFriendCodeCallable = httpsCallable(functions, 'lookupFriendCode');
   const sendFriendRequestCallable = httpsCallable(functions, 'sendFriendRequest');
   const cancelFriendRequestCallable = httpsCallable(functions, 'cancelFriendRequest');
   const acceptFriendRequestCallable = httpsCallable(functions, 'acceptFriendRequest');
@@ -2659,15 +2691,13 @@
     }
   }
 
-  async function findUidByFriendCode(code) {
-    try {
-      const snap = await getDoc(doc(db, 'friendCodes', code));
-      if (!snap.exists()) return null;
-      return snap.data().uid || null;
-    } catch (e) {
-      console.warn('[RT] フレンドID検索に失敗しました', e);
-      return null;
-    }
+  // フレンドIDからのユーザー検索は Cloud Functions（lookupFriendCode）経由に一本化。
+  // 戻り値: { uid, nickname, photoURL } / 見つからない場合は null を返す。
+  // 呼び出し側で表示する詳細なエラーメッセージが必要な場合は、
+  // e.code（'not-found' / 'invalid-argument' 等）を見て分岐する。
+  async function lookupFriendByCode(code) {
+    const res = await lookupFriendCodeCallable({ code: code });
+    return res.data || null;
   }
 
   async function isAlreadyFriend(uid, otherUid) {
@@ -2868,6 +2898,7 @@
           return {
             uid: fUid,
             nickname: (typeof data.nickname === 'string' && data.nickname) ? data.nickname : '名無し',
+            photoURL: (typeof data.photoURL === 'string' && data.photoURL) ? data.photoURL : null,
             bestScore: typeof data.bestScore === 'number' ? data.bestScore : null,
             attemptCount: typeof data.attemptCount === 'number' ? data.attemptCount : 0,
             totalTimeSum: typeof data.totalTimeSum === 'number' ? data.totalTimeSum : 0
@@ -2960,17 +2991,23 @@
       return;
     }
 
-    const medals = ['🥇', '🥈', '🥉'];
     entries.forEach(function (e, i) {
-      const medal = medals[i] || (i + 1) + '.';
+      const rank = i + 1;
 
       const row = document.createElement('div');
       row.className = 'friend-rank-row';
       if (e.isSelf) row.style.background = 'rgba(43,135,209,0.18)';
 
-      const medalEl = document.createElement('span');
-      medalEl.className = 'friend-rank-medal';
-      medalEl.textContent = medal;
+      const rankEl = document.createElement('span');
+      rankEl.className = 'friend-rank-medal';
+      if (rank === 1) rankEl.classList.add('is-top1');
+      else if (rank === 2) rankEl.classList.add('is-top2');
+      else if (rank === 3) rankEl.classList.add('is-top3');
+      rankEl.textContent = rank + '位';
+
+      const avatarEl = document.createElement('span');
+      avatarEl.className = 'friend-rank-avatar';
+      avatarEl.textContent = '👤';
 
       const nameEl = document.createElement('span');
       nameEl.className = 'friend-name';
@@ -2981,7 +3018,8 @@
       scoreEl.className = 'friend-score';
       scoreEl.textContent = formatMs(e.bestScore);
 
-      row.appendChild(medalEl);
+      row.appendChild(rankEl);
+      row.appendChild(avatarEl);
       row.appendChild(nameEl);
       row.appendChild(scoreEl);
       listEl.appendChild(row);
@@ -3051,7 +3089,25 @@
     statusEl.textContent = '検索中…';
 
     try {
-      const toUid = await findUidByFriendCode(code);
+      let target;
+      try {
+        target = await lookupFriendByCode(code);
+      } catch (lookupErr) {
+        console.warn('[RT] フレンドID検索に失敗しました', lookupErr);
+        if (lookupErr && lookupErr.code === 'functions/not-found') {
+          statusEl.textContent = 'そのIDのユーザーが見つかりません';
+        } else if (lookupErr && lookupErr.code === 'functions/invalid-argument') {
+          statusEl.textContent = 'フレンドIDの形式が正しくありません（例: SUN-AB23CD）';
+        } else if (lookupErr && lookupErr.code === 'functions/unauthenticated') {
+          statusEl.textContent = 'ログインが必要です';
+        } else {
+          statusEl.textContent = '検索中にエラーが発生しました。時間をおいて再度お試しください';
+        }
+        statusEl.classList.add('is-error');
+        return;
+      }
+
+      const toUid = target && target.uid;
       if (!toUid) {
         statusEl.textContent = 'そのIDのユーザーが見つかりません';
         statusEl.classList.add('is-error');
@@ -3205,12 +3261,23 @@
   }
   completeEmailLinkSignInIfNeeded();
 
+  // ログイン中のプロフィール（アイコン画像など）をFirestoreへ同期する。
+  // 失敗しても致命的ではない（アイコンが表示されないだけ）ので、警告ログのみに留める。
+  async function syncProfileSafely() {
+    try {
+      await syncProfileCallable();
+    } catch (e) {
+      console.warn('[RT] プロフィール同期に失敗しました', e);
+    }
+  }
+
   onAuthStateChanged(auth, function (user) {
     if (user && !user.isAnonymous) {
       currentUid = user.uid;
       pullAndMerge(user.uid);
       updateAccountUi(user);
       loadNicknameUi(user.uid);
+      syncProfileSafely();
       window.localStorage.setItem('sunnySignedIn', '1');
       hideAuthGate();
     } else {
