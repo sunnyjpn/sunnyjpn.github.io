@@ -1570,7 +1570,7 @@
   function buildAttemptEvent(ms) {
     return {
       id: createRoundNonce() + '-' + Date.now().toString(36),
-      ms: Math.round(ms),
+      ms: ms,
       createdAt: Date.now()
     };
   }
@@ -1613,6 +1613,9 @@
 
   let state = 'idle';
   let startTime = 0;
+  // rAF同期により実際の描画完了後にstartTimeがセットされるまでの間、
+  // 「readyになったが計測はまだ確定していない」状態を区別するためのフラグ
+  let readyArmed = false;
   let waitTimer = null;
   let retrievingTimer = null;
   let lastResult = null;
@@ -1757,15 +1760,15 @@
   }
 
   function renderStats() {
-    bestVal.textContent = bestScore === null ? '–' : bestScore + ' ms';
+    bestVal.textContent = bestScore === null ? '–' : msLabel(bestScore);
     worldVal.textContent = WORLD_AVERAGE + ' ms';
-    avgVal.textContent = attemptCount === 0 ? '–' : Math.round(totalTimeSum / attemptCount) + ' ms';
+    avgVal.textContent = attemptCount === 0 ? '–' : msLabel(totalTimeSum / attemptCount);
 
     const accBest = document.getElementById('account-stat-best');
     const accAvg = document.getElementById('account-stat-avg');
     const accGames = document.getElementById('account-stat-games');
-    if (accBest) accBest.textContent = bestScore === null ? '–' : bestScore + 'ms';
-    if (accAvg) accAvg.textContent = attemptCount === 0 ? '–' : Math.round(totalTimeSum / attemptCount) + 'ms';
+    if (accBest) accBest.textContent = bestScore === null ? '–' : formatMs(bestScore);
+    if (accAvg) accAvg.textContent = attemptCount === 0 ? '–' : formatMs(totalTimeSum / attemptCount);
     if (accGames) accGames.textContent = attemptCount === 0 ? '–' : String(attemptCount);
   }
 
@@ -1828,16 +1831,33 @@
 
   function setReadyScreen() {
     state = 'ready';
+    readyArmed = false;
     box.style.backgroundColor = COLOR_GO;
     mainText.textContent = labelState.actionWord + '!';
     subText.style.display = 'none';
-    startTime = performance.now();
-    markRoundReady();
     vibrateFeedback(40);
     try {
       goSound.currentTime = 0;
       goSound.play().catch(function () {});
     } catch (e) {}
+
+    // style変更の直後にperformance.now()を呼ぶと、まだブラウザが
+    // 実際に緑色を「描画」する前の時刻になってしまい、計測開始点が
+    // 実際にユーザーが緑を目にするタイミングよりも早くなってしまう
+    // （その分、反応時間が実際より長く計測されてしまう）。
+    // 2回のrequestAnimationFrameを挟むことで、1回目のコールバックで
+    // 「これから描画される直前」のフレームを、2回目のコールバックで
+    // 「その描画が完了した直後」のフレームを捕捉し、計測開始時刻を
+    // 実際の描画タイミングに同期させる。
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        // 待機中に状態が変わっていた場合（早タップ・バックグラウンド化等）は何もしない
+        if (state !== 'ready') return;
+        startTime = performance.now();
+        readyArmed = true;
+        markRoundReady();
+      });
+    });
   }
 
   function setTooSoonScreen() {
@@ -1924,7 +1944,7 @@
     box.style.backgroundColor = COLOR_RESULT;
     idleTitle.style.display = 'none';
     mainText.style.display = 'block';
-    mainText.textContent = ms + ' ms';
+    mainText.textContent = msLabel(ms);
     subText.style.display = 'block';
     subText.textContent = accepted
       ? getContinueText()
@@ -1943,7 +1963,7 @@
 
   function shareText() {
     if (lastResult !== null) {
-      return 'Reaction Time Testで ' + lastResult + ' ms を記録。ハイスコアは ' + (bestScore === null ? '–' : bestScore + ' ms') + '。';
+      return 'Reaction Time Testで ' + msLabel(lastResult) + ' を記録。ハイスコアは ' + (bestScore === null ? '–' : msLabel(bestScore)) + '。';
     }
     return 'Reaction Time Testに挑戦してみよう。';
   }
@@ -2023,8 +2043,14 @@
     }
 
     if (state === 'ready') {
+      // 描画完了の同期(rAF×2)がまだ終わっていない場合は、
+      // startTimeが未確定のため反応時間を計算できない。
+      // この窓は通常1～2フレーム分(十数ms程度)しかなく、
+      // 人間の目と手では実質反応不可能な範囲なので黙って無視する。
+      if (!readyArmed) return;
       const now = performance.now();
-      const ms = Math.round(now - startTime);
+      // 小数点以下2桁まで保持（performance.nowはサブミリ秒精度を持つため）
+      const ms = Math.round((now - startTime) * 100) / 100;
       const verdict = validateRoundResult(ms, now);
       setRetrievingScreen(ms, verdict);
     }
@@ -2643,7 +2669,12 @@
   }
 
   function formatMs(ms) {
-    return typeof ms === 'number' ? ms + 'ms' : '–';
+    return typeof ms === 'number' ? ms.toFixed(2) + 'ms' : '–';
+  }
+
+  // 反応時間表示用（小数点第2位まで、末尾に半角スペース+ms）
+  function msLabel(ms) {
+    return typeof ms === 'number' ? ms.toFixed(2) + ' ms' : '–';
   }
 
   async function refreshMyFriendCodeUi() {
@@ -2817,7 +2848,7 @@
     }
 
     friends.forEach(function (f) {
-      const avg = f.attemptCount > 0 ? Math.round(f.totalTimeSum / f.attemptCount) + 'ms' : '–';
+      const avg = f.attemptCount > 0 ? formatMs(f.totalTimeSum / f.attemptCount) : '–';
 
       const row = document.createElement('div');
       row.className = 'friend-list-row';

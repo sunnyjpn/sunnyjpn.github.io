@@ -68,7 +68,8 @@ exports.submitScore = onCall({ enforceAppCheck: true }, async (request) => {
 
   const userRef = db.collection('users').doc(uid);
   const roundRef = userRef.collection('rounds').doc(roundId);
-  const roundedMs = Math.round(ms);
+  // クライアント側が小数点第2位まで送ってくるため、サーバー側も同じ精度で保持する
+  const roundedMs = Math.round(ms * 100) / 100;
 
   const result = await db.runTransaction(async (tx) => {
     const [roundSnap, userSnap] = await Promise.all([tx.get(roundRef), tx.get(userRef)]);
