@@ -229,9 +229,9 @@
 
   #retrieving-text {
     display: none;
-    font-size: clamp(20px, 4.5vw, 24px);
-    font-weight: 600;
-    opacity: 0.9;
+    font-size: clamp(26px, 6vw, 32px);
+    font-weight: 700;
+    opacity: 0.95;
     text-align: center;
   }
 
@@ -703,10 +703,36 @@
     pointer-events: auto;
   }
 
+  #account-avatar-wrap {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #account-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  #account-avatar-fallback {
+    font-size: 26px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.75);
+  }
+
   #account-panel .account-status {
     font-size: 12.5px;
     color: rgba(255,255,255,0.55);
     margin-bottom: 14px;
+    text-align: center;
   }
 
   #account-panel .account-stats {
@@ -781,245 +807,19 @@
     cursor: pointer;
   }
 
-  #account-google-btn:hover,
-  #account-logout-btn:hover { background: rgba(255,255,255,0.08); }
+  #account-google-btn:hover { background: rgba(255,255,255,0.08); }
 
-  /* ▼▼ フレンド機能 ▼▼ */
-  .account-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 14px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 10px;
-    padding: 3px;
+  #account-logout-btn {
+    margin-top: 8px;
+    border-color: rgba(224,80,80,0.4);
+    color: #e08080;
   }
 
-  .account-tab-btn {
-    flex: 1;
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.55);
-    font-size: 12.5px;
-    font-weight: 600;
-    padding: 7px 4px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+  #account-logout-btn:hover {
+    background: rgba(224,80,80,0.12);
+    border-color: rgba(224,80,80,0.6);
   }
 
-  .account-tab-btn.active {
-    background: #2B87D1;
-    color: #fff;
-  }
-
-  .friend-hint-text {
-    font-size: 12.5px;
-    color: rgba(255,255,255,0.6);
-    line-height: 1.6;
-    margin: 0 0 12px;
-  }
-
-  #friend-google-btn {
-    width: 100%;
-    background: #2B87D1;
-    border: none;
-    color: #fff;
-    border-radius: 8px;
-    padding: 9px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  #friend-google-btn:hover { background: #3a95de; }
-
-  .friend-block { margin-bottom: 16px; }
-  .friend-block:last-child { margin-bottom: 0; }
-
-  .friend-section-title {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: rgba(255,255,255,0.5);
-    margin-bottom: 8px;
-    letter-spacing: 0.02em;
-  }
-
-  .friend-id-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 8px;
-    padding: 8px 10px;
-  }
-
-  #friend-my-code {
-    flex: 1;
-    font-size: 14px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.03em;
-    font-family: "SFMono-Regular", Consolas, monospace;
-  }
-
-  #friend-copy-code-btn {
-    background: rgba(255,255,255,0.1);
-    border: none;
-    color: #fff;
-    border-radius: 6px;
-    padding: 5px 10px;
-    font-size: 11.5px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  #friend-copy-code-btn:hover { background: rgba(255,255,255,0.18); }
-
-  .friend-add-row {
-    display: flex;
-    gap: 6px;
-  }
-
-  #friend-add-input {
-    flex: 1;
-    min-width: 0;
-    background: #232328;
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 8px;
-    padding: 8px 10px;
-    color: #fff;
-    font-size: 13px;
-    text-transform: uppercase;
-  }
-
-  #friend-add-btn {
-    flex-shrink: 0;
-    background: #2B87D1;
-    border: none;
-    color: #fff;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  #friend-add-btn:hover { background: #3a95de; }
-  #friend-add-btn:disabled { opacity: 0.6; cursor: default; }
-
-  .friend-status-text {
-    font-size: 11.5px;
-    margin-top: 6px;
-    min-height: 14px;
-    color: rgba(255,255,255,0.55);
-  }
-
-  .friend-status-text.is-error { color: #ff8080; }
-  .friend-status-text.is-success { color: #6bd48a; }
-
-  .friend-empty {
-    font-size: 12px;
-    color: rgba(255,255,255,0.4);
-    padding: 6px 2px;
-  }
-
-  .friend-request-row,
-  .friend-list-row,
-  .friend-rank-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 8px;
-    padding: 8px 10px;
-    margin-bottom: 6px;
-  }
-
-  .friend-request-row:last-child,
-  .friend-list-row:last-child,
-  .friend-rank-row:last-child { margin-bottom: 0; }
-
-  .friend-avatar {
-    font-size: 15px;
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .friend-avatar img,
-  .friend-rank-avatar img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .friend-name {
-    flex: 1;
-    min-width: 0;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .friend-sub {
-    font-size: 10.5px;
-    color: rgba(255,255,255,0.45);
-  }
-
-  .friend-score {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #6bd0ff;
-    flex-shrink: 0;
-    text-align: right;
-  }
-
-  .friend-rank-medal {
-    font-size: 12px;
-    font-weight: 700;
-    width: 30px;
-    flex-shrink: 0;
-    text-align: center;
-    color: rgba(255,255,255,0.75);
-  }
-
-  .friend-rank-medal.is-top1 { color: #ffd76a; font-size: 13px; }
-  .friend-rank-medal.is-top2 { color: #d9d9e6; font-size: 13px; }
-  .friend-rank-medal.is-top3 { color: #e0ab74; font-size: 13px; }
-
-  .friend-rank-avatar {
-    font-size: 15px;
-    width: 22px;
-    height: 22px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .friend-req-btn {
-    border: none;
-    border-radius: 6px;
-    padding: 5px 9px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  .friend-req-accept { background: #2B87D1; color: #fff; }
-  .friend-req-accept:hover { background: #3a95de; }
-  .friend-req-decline { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
-  .friend-req-decline:hover { background: rgba(255,255,255,0.18); }
-  /* ▲▲ フレンド機能ここまで ▲▲ */
   /* ▲▲ アカウントアイコン／パネルここまで ▲▲ */
 
   #box::before {
@@ -1261,82 +1061,33 @@
     </button>
 
     <div id="account-panel">
-      <div class="account-tabs">
-        <button type="button" class="account-tab-btn active" data-tab="profile">プロフィール</button>
-        <button type="button" class="account-tab-btn" data-tab="friends">フレンド</button>
+      <div id="account-avatar-wrap">
+        <img id="account-avatar-img" alt="" style="display:none;">
+        <span id="account-avatar-fallback">?</span>
       </div>
+      <div class="account-status" id="account-status-text">読み込み中…</div>
 
-      <div class="account-tab-panel" data-tab-panel="profile">
-        <div class="account-status" id="account-status-text">読み込み中…</div>
-
-        <div class="account-stats">
-          <div class="account-stat">
-            <div class="account-stat-label">ベスト</div>
-            <div class="account-stat-value" id="account-stat-best">–</div>
-          </div>
-          <div class="account-stat">
-            <div class="account-stat-label">平均</div>
-            <div class="account-stat-value" id="account-stat-avg">–</div>
-          </div>
-          <div class="account-stat">
-            <div class="account-stat-label">回数</div>
-            <div class="account-stat-value" id="account-stat-games">–</div>
-          </div>
+      <div class="account-stats">
+        <div class="account-stat">
+          <div class="account-stat-label">ベスト</div>
+          <div class="account-stat-value" id="account-stat-best">–</div>
         </div>
-
-        <label for="nickname-input">ニックネーム</label>
-        <input id="nickname-input" type="text" maxlength="16" placeholder="未設定">
-        <button id="nickname-save-btn" type="button">保存</button>
-
-        <button id="account-google-btn" type="button" style="display:none;">Googleでログイン</button>
-        <button id="account-logout-btn" type="button" style="display:none;">ログアウト</button>
-      </div>
-
-      <div class="account-tab-panel" data-tab-panel="friends" style="display:none;">
-        <div id="friend-login-required">
-          <p class="friend-hint-text">フレンド機能を使うにはGoogleログインが必要です。</p>
-          <button id="friend-google-btn" type="button">Googleでログイン</button>
+        <div class="account-stat">
+          <div class="account-stat-label">平均</div>
+          <div class="account-stat-value" id="account-stat-avg">–</div>
         </div>
-
-        <div id="friend-main">
-          <div class="friend-block">
-            <div class="friend-section-title">あなたのID</div>
-            <div class="friend-id-row">
-              <span id="friend-my-code">–</span>
-              <button type="button" id="friend-copy-code-btn">コピー</button>
-            </div>
-          </div>
-
-          <div class="friend-block">
-            <div class="friend-section-title">＋ フレンド追加</div>
-            <div class="friend-add-row">
-              <input id="friend-add-input" type="text" placeholder="SUN-XXXXXX" maxlength="12" autocapitalize="characters">
-              <button type="button" id="friend-add-btn">追加</button>
-            </div>
-            <div id="friend-add-status" class="friend-status-text"></div>
-          </div>
-
-          <div class="friend-block" id="friend-requests-block" style="display:none;">
-            <div class="friend-section-title">フレンドリクエスト</div>
-            <div id="friend-requests-list"></div>
-          </div>
-
-          <div class="friend-block" id="friend-sent-requests-block" style="display:none;">
-            <div class="friend-section-title">送信中のリクエスト</div>
-            <div id="friend-sent-requests-list"></div>
-          </div>
-
-          <div class="friend-block">
-            <div class="friend-section-title">🏆 フレンドランキング</div>
-            <div id="friend-ranking-list"><div class="friend-empty">まだフレンドがいません</div></div>
-          </div>
-
-          <div class="friend-block">
-            <div class="friend-section-title">フレンド <span id="friend-count">0</span></div>
-            <div id="friend-list"><div class="friend-empty">まだフレンドがいません</div></div>
-          </div>
+        <div class="account-stat">
+          <div class="account-stat-label">回数</div>
+          <div class="account-stat-value" id="account-stat-games">–</div>
         </div>
       </div>
+
+      <label for="nickname-input">ニックネーム</label>
+      <input id="nickname-input" type="text" maxlength="16" placeholder="未設定">
+      <button id="nickname-save-btn" type="button">保存</button>
+
+      <button id="account-google-btn" type="button" style="display:none;">Googleでログイン</button>
+      <button id="account-logout-btn" type="button" style="display:none;">ログアウト</button>
     </div>
 
     <div id="content">
@@ -1355,10 +1106,6 @@
       <div class="stat-card">
         <div class="stat-label">自己平均</div>
         <div class="stat-value" id="avg-val">–</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">全世界平均</div>
-        <div class="stat-value" id="world-val">250 ms</div>
       </div>
     </div>
 
@@ -1477,7 +1224,6 @@
 <script>
 (function () {
   const STORAGE_KEY = 'reaction-time-test-v3';
-  const WORLD_AVERAGE = 250;
 
   const COLOR_IDLE = '#2B87D1';
   const COLOR_WAIT = '#CE2636';
@@ -1516,7 +1262,6 @@
   const retrievingText = document.getElementById('retrieving-text');
   const subText = document.getElementById('sub-text');
   const bestVal = document.getElementById('best-val');
-  const worldVal = document.getElementById('world-val');
   const avgVal = document.getElementById('avg-val');
   const shareX = document.getElementById('share-x');
   const shareNative = document.getElementById('share-native');
@@ -1783,7 +1528,6 @@
 
   function renderStats() {
     bestVal.textContent = bestScore === null ? '–' : msLabel(bestScore);
-    worldVal.textContent = WORLD_AVERAGE + ' ms';
     avgVal.textContent = attemptCount === 0 ? '–' : msLabel(totalTimeSum / attemptCount);
 
     const accBest = document.getElementById('account-stat-best');
@@ -1984,7 +1728,7 @@
     mainText.textContent = 'Wait for green';
     subText.style.display = 'none';
 
-    const delay = 1500 + Math.random() * 1500;
+    const delay = 1000 + Math.random() * 1500;
     beginIntegrityRound(delay);
     waitTimer = setTimeout(setReadyScreen, delay);
   }
@@ -2392,7 +2136,6 @@
   loadStats();
   renderStats();
   animateCountUp(bestVal, bestVal.textContent);
-  animateCountUp(worldVal, worldVal.textContent);
   animateCountUp(avgVal, avgVal.textContent);
   updateAdaptiveUi();
   setIdleScreen();
@@ -2528,12 +2271,6 @@
   const startRoundCallable = httpsCallable(functions, 'startRound');
   const submitScoreCallable = httpsCallable(functions, 'submitScore');
   const syncProfileCallable = httpsCallable(functions, 'syncProfile');
-  const ensureFriendCodeCallable = httpsCallable(functions, 'ensureFriendCode');
-  const lookupFriendCodeCallable = httpsCallable(functions, 'lookupFriendCode');
-  const sendFriendRequestCallable = httpsCallable(functions, 'sendFriendRequest');
-  const cancelFriendRequestCallable = httpsCallable(functions, 'cancelFriendRequest');
-  const acceptFriendRequestCallable = httpsCallable(functions, 'acceptFriendRequest');
-  const declineFriendRequestCallable = httpsCallable(functions, 'declineFriendRequest');
 
   // ラウンド開始をサーバーへ申告し、ワンタイムトークンを発行してもらう
   async function requestRoundToken() {
@@ -2624,6 +2361,21 @@
       if (statusText) statusText.textContent = 'Googleでログイン中：' + (user.displayName || user.email || '');
       if (accGoogleBtn) accGoogleBtn.style.display = 'none';
       if (accLogoutBtn) accLogoutBtn.style.display = 'block';
+
+      const avatarImg = document.getElementById('account-avatar-img');
+      const avatarFallback = document.getElementById('account-avatar-fallback');
+      if (user.photoURL && avatarImg) {
+        avatarImg.src = user.photoURL;
+        avatarImg.style.display = 'block';
+        if (avatarFallback) avatarFallback.style.display = 'none';
+        avatarImg.onerror = function () {
+          avatarImg.style.display = 'none';
+          if (avatarFallback) avatarFallback.style.display = 'block';
+        };
+      } else {
+        if (avatarImg) avatarImg.style.display = 'none';
+        if (avatarFallback) { avatarFallback.style.display = 'block'; avatarFallback.textContent = label || 'U'; }
+      }
     } else {
       if (loginBtn) { loginBtn.textContent = 'Googleでログイン'; loginBtn.disabled = false; }
       if (splash) {
@@ -2635,6 +2387,11 @@
       if (statusText) statusText.textContent = '未ログインです';
       if (accGoogleBtn) accGoogleBtn.style.display = 'block';
       if (accLogoutBtn) accLogoutBtn.style.display = 'none';
+
+      const avatarImg = document.getElementById('account-avatar-img');
+      const avatarFallback = document.getElementById('account-avatar-fallback');
+      if (avatarImg) avatarImg.style.display = 'none';
+      if (avatarFallback) { avatarFallback.style.display = 'block'; avatarFallback.textContent = '?'; }
     }
   }
 
@@ -2670,577 +2427,6 @@
     }
   }
 
-  // ▼▼ フレンド機能 ▼▼
-  // 発行・送信・承認・拒否・キャンセルはすべてサーバー側（Cloud Functions）で行う。
-  // クライアントSDKからの直接Firestore書き込みは firestore.rules で禁止済み
-  // （レート制限・不整合防止のチェックを迂回できないようにするため）。
-  let friendsUiLoaded = false;
-
-  function normalizeFriendCodeInput(raw) {
-    return String(raw || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
-  }
-
-  // 未発行なら、衝突しないユニークなフレンドIDをサーバー側で新規発行する
-  async function ensureFriendCode() {
-    try {
-      const res = await ensureFriendCodeCallable();
-      return (res.data && res.data.friendCode) || null;
-    } catch (e) {
-      console.warn('[RT] フレンドIDの発行に失敗しました', e);
-      return null;
-    }
-  }
-
-  // フレンドIDからのユーザー検索は Cloud Functions（lookupFriendCode）経由に一本化。
-  // 戻り値: { uid, nickname, photoURL } / 見つからない場合は null を返す。
-  // 呼び出し側で表示する詳細なエラーメッセージが必要な場合は、
-  // e.code（'not-found' / 'invalid-argument' 等）を見て分岐する。
-  async function lookupFriendByCode(code) {
-    const res = await lookupFriendCodeCallable({ code: code });
-    return res.data || null;
-  }
-
-  async function isAlreadyFriend(uid, otherUid) {
-    try {
-      const snap = await getDoc(doc(db, 'users', uid, 'friends', otherUid));
-      return snap.exists();
-    } catch (e) {
-      return false;
-    }
-  }
-
-  async function sendFriendRequest(toUid) {
-    if (!currentUid || !toUid || toUid === currentUid) return { ok: false, reason: 'invalid' };
-    try {
-      const res = await sendFriendRequestCallable({ toUid: toUid });
-      return res.data;
-    } catch (e) {
-      console.warn('[RT] フレンドリクエストの送信に失敗しました', e);
-      if (e && e.code === 'functions/resource-exhausted') {
-        return { ok: false, reason: 'rate-limited', message: e.message };
-      }
-      return { ok: false, reason: 'error' };
-    }
-  }
-
-  // 送信済みのフレンドリクエストをキャンセルする（送信者側から取り消す）
-  async function cancelFriendRequest(toUid) {
-    if (!currentUid || !toUid) return;
-    try {
-      await cancelFriendRequestCallable({ toUid: toUid });
-    } catch (e) {
-      console.warn('[RT] フレンドリクエストのキャンセルに失敗しました', e);
-    }
-  }
-
-  async function acceptFriendRequest(fromUid) {
-    if (!currentUid || !fromUid) return;
-    try {
-      await acceptFriendRequestCallable({ fromUid: fromUid });
-    } catch (e) {
-      console.warn('[RT] フレンドリクエストの承認に失敗しました', e);
-    }
-  }
-
-  async function declineFriendRequest(fromUid) {
-    if (!currentUid || !fromUid) return;
-    try {
-      await declineFriendRequestCallable({ fromUid: fromUid });
-    } catch (e) {
-      console.warn('[RT] フレンドリクエストの削除に失敗しました', e);
-    }
-  }
-
-  function formatMs(ms) {
-    return typeof ms === 'number' ? ms.toFixed(1) + 'ms' : '–';
-  }
-
-  // 反応時間表示用（小数点第2位まで、末尾に半角スペース+ms）
-  function msLabel(ms) {
-    return typeof ms === 'number' ? ms.toFixed(1) + ' ms' : '–';
-  }
-
-  async function refreshMyFriendCodeUi() {
-    const codeEl = document.getElementById('friend-my-code');
-    if (!codeEl || !currentUid) return;
-    codeEl.textContent = '発行中…';
-    const code = await ensureFriendCode();
-    codeEl.textContent = code || '取得に失敗しました';
-  }
-
-  async function refreshFriendRequestsUi() {
-    const block = document.getElementById('friend-requests-block');
-    const listEl = document.getElementById('friend-requests-list');
-    if (!block || !listEl || !currentUid) return;
-    try {
-      const snaps = await getDocs(collection(db, 'users', currentUid, 'friendRequests'));
-      listEl.textContent = '';
-      if (snaps.empty) {
-        block.style.display = 'none';
-        return;
-      }
-      block.style.display = 'block';
-      snaps.forEach(function (d) {
-        const data = d.data() || {};
-        const name = (typeof data.fromNickname === 'string' && data.fromNickname)
-          ? data.fromNickname
-          : (typeof data.fromCode === 'string' && data.fromCode) ? data.fromCode : '名無し';
-
-        const row = document.createElement('div');
-        row.className = 'friend-request-row';
-        row.dataset.fromUid = d.id;
-
-        const avatar = document.createElement('span');
-        avatar.className = 'friend-avatar';
-        avatar.textContent = '👤';
-
-        const nameEl = document.createElement('span');
-        nameEl.className = 'friend-name';
-        // ユーザー入力（相手のニックネーム/フレンドID）は必ず textContent で表示する。
-        // innerHTML に文字列結合しないことで、HTMLタグ・スクリプトの注入を根本的に防止する。
-        nameEl.textContent = name;
-
-        const acceptBtn = document.createElement('button');
-        acceptBtn.type = 'button';
-        acceptBtn.className = 'friend-req-btn friend-req-accept';
-        acceptBtn.dataset.action = 'accept';
-        acceptBtn.textContent = '承認';
-
-        const declineBtn = document.createElement('button');
-        declineBtn.type = 'button';
-        declineBtn.className = 'friend-req-btn friend-req-decline';
-        declineBtn.dataset.action = 'decline';
-        declineBtn.textContent = '拒否';
-
-        row.appendChild(avatar);
-        row.appendChild(nameEl);
-        row.appendChild(acceptBtn);
-        row.appendChild(declineBtn);
-        listEl.appendChild(row);
-      });
-    } catch (e) {
-      console.warn('[RT] フレンドリクエストの取得に失敗しました', e);
-    }
-  }
-
-  // 自分が送信して、まだ相手に承認/拒否されていないリクエストの一覧（キャンセル用）
-  async function refreshSentFriendRequestsUi() {
-    const block = document.getElementById('friend-sent-requests-block');
-    const listEl = document.getElementById('friend-sent-requests-list');
-    if (!block || !listEl || !currentUid) return;
-    try {
-      const snaps = await getDocs(collection(db, 'users', currentUid, 'sentFriendRequests'));
-      listEl.textContent = '';
-      if (snaps.empty) {
-        block.style.display = 'none';
-        return;
-      }
-      block.style.display = 'block';
-
-      const toUids = [];
-      snaps.forEach(function (d) { toUids.push(d.id); });
-
-      const nameByUid = {};
-      await Promise.all(toUids.map(async function (toUid) {
-        try {
-          const uSnap = await getDoc(doc(db, 'users', toUid));
-          nameByUid[toUid] = (uSnap.exists() && typeof uSnap.data().nickname === 'string' && uSnap.data().nickname)
-            ? uSnap.data().nickname
-            : '名無し';
-        } catch (e) {
-          nameByUid[toUid] = '名無し';
-        }
-      }));
-
-      toUids.forEach(function (toUid) {
-        const row = document.createElement('div');
-        row.className = 'friend-request-row';
-        row.dataset.toUid = toUid;
-
-        const avatar = document.createElement('span');
-        avatar.className = 'friend-avatar';
-        avatar.textContent = '👤';
-
-        const nameEl = document.createElement('span');
-        nameEl.className = 'friend-name';
-        // ユーザー入力（相手のニックネーム）は必ず textContent で表示する
-        nameEl.textContent = nameByUid[toUid] || '名無し';
-
-        const cancelBtn = document.createElement('button');
-        cancelBtn.type = 'button';
-        cancelBtn.className = 'friend-req-btn friend-req-decline';
-        cancelBtn.dataset.action = 'cancel';
-        cancelBtn.textContent = 'キャンセル';
-
-        row.appendChild(avatar);
-        row.appendChild(nameEl);
-        row.appendChild(cancelBtn);
-        listEl.appendChild(row);
-      });
-    } catch (e) {
-      console.warn('[RT] 送信中リクエストの取得に失敗しました', e);
-    }
-  }
-
-  async function loadFriendsData() {
-    if (!currentUid) return [];
-    try {
-      const snaps = await getDocs(collection(db, 'users', currentUid, 'friends'));
-      const friendUids = [];
-      snaps.forEach(function (d) { friendUids.push(d.id); });
-
-      // N+1回の直列取得を避け、全員分を並列に取得する
-      const results = await Promise.all(friendUids.map(async function (fUid) {
-        try {
-          const uSnap = await getDoc(doc(db, 'users', fUid));
-          if (!uSnap.exists()) return null;
-          const data = uSnap.data();
-          return {
-            uid: fUid,
-            nickname: (typeof data.nickname === 'string' && data.nickname) ? data.nickname : '名無し',
-            photoURL: (typeof data.photoURL === 'string' && data.photoURL) ? data.photoURL : null,
-            bestScore: typeof data.bestScore === 'number' ? data.bestScore : null,
-            attemptCount: typeof data.attemptCount === 'number' ? data.attemptCount : 0,
-            totalTimeSum: typeof data.totalTimeSum === 'number' ? data.totalTimeSum : 0
-          };
-        } catch (e) {
-          return null;
-        }
-      }));
-
-      return results.filter(function (f) { return f !== null; });
-    } catch (e) {
-      console.warn('[RT] フレンド一覧の取得に失敗しました', e);
-      return [];
-    }
-  }
-
-  function renderFriendList(friends) {
-    const listEl = document.getElementById('friend-list');
-    const countEl = document.getElementById('friend-count');
-    if (!listEl) return;
-    if (countEl) countEl.textContent = String(friends.length);
-
-    listEl.textContent = '';
-
-    if (!friends.length) {
-      const empty = document.createElement('div');
-      empty.className = 'friend-empty';
-      empty.textContent = 'まだフレンドがいません';
-      listEl.appendChild(empty);
-      return;
-    }
-
-    friends.forEach(function (f) {
-      const avg = f.attemptCount > 0 ? formatMs(f.totalTimeSum / f.attemptCount) : '–';
-
-      const row = document.createElement('div');
-      row.className = 'friend-list-row';
-
-      const avatar = document.createElement('span');
-      avatar.className = 'friend-avatar';
-      avatar.textContent = '👤';
-
-      const nameEl = document.createElement('span');
-      nameEl.className = 'friend-name';
-      // ユーザー入力（フレンドのニックネーム）は必ず textContent で表示する。
-      // innerHTML に文字列結合しないことで、HTMLタグ・スクリプトの注入を根本的に防止する。
-      nameEl.textContent = f.nickname;
-
-      const sub = document.createElement('span');
-      sub.className = 'friend-sub';
-      sub.textContent = '平均 ' + avg + ' / ' + f.attemptCount + '回';
-
-      nameEl.appendChild(document.createElement('br'));
-      nameEl.appendChild(sub);
-
-      const scoreEl = document.createElement('span');
-      scoreEl.className = 'friend-score';
-      scoreEl.textContent = formatMs(f.bestScore);
-
-      row.appendChild(avatar);
-      row.appendChild(nameEl);
-      row.appendChild(scoreEl);
-      listEl.appendChild(row);
-    });
-  }
-
-  function renderFriendRanking(friends, self) {
-    const listEl = document.getElementById('friend-ranking-list');
-    if (!listEl) return;
-
-    const entries = friends.map(function (f) {
-      return { nickname: f.nickname, bestScore: f.bestScore, isSelf: false };
-    });
-    if (self) entries.push({ nickname: (self.nickname || 'あなた') + '（あなた）', bestScore: self.bestScore, isSelf: true });
-
-    entries.sort(function (a, b) {
-      if (a.bestScore === null && b.bestScore === null) return 0;
-      if (a.bestScore === null) return 1;
-      if (b.bestScore === null) return -1;
-      return a.bestScore - b.bestScore;
-    });
-
-    listEl.textContent = '';
-
-    if (!entries.length) {
-      const empty = document.createElement('div');
-      empty.className = 'friend-empty';
-      empty.textContent = 'まだフレンドがいません';
-      listEl.appendChild(empty);
-      return;
-    }
-
-    entries.forEach(function (e, i) {
-      const rank = i + 1;
-
-      const row = document.createElement('div');
-      row.className = 'friend-rank-row';
-      if (e.isSelf) row.style.background = 'rgba(43,135,209,0.18)';
-
-      const rankEl = document.createElement('span');
-      rankEl.className = 'friend-rank-medal';
-      if (rank === 1) rankEl.classList.add('is-top1');
-      else if (rank === 2) rankEl.classList.add('is-top2');
-      else if (rank === 3) rankEl.classList.add('is-top3');
-      rankEl.textContent = rank + '位';
-
-      const avatarEl = document.createElement('span');
-      avatarEl.className = 'friend-rank-avatar';
-      avatarEl.textContent = '👤';
-
-      const nameEl = document.createElement('span');
-      nameEl.className = 'friend-name';
-      // ユーザー入力（ニックネーム）は必ず textContent で表示する（innerHTML禁止）
-      nameEl.textContent = e.nickname;
-
-      const scoreEl = document.createElement('span');
-      scoreEl.className = 'friend-score';
-      scoreEl.textContent = formatMs(e.bestScore);
-
-      row.appendChild(rankEl);
-      row.appendChild(avatarEl);
-      row.appendChild(nameEl);
-      row.appendChild(scoreEl);
-      listEl.appendChild(row);
-    });
-  }
-
-  async function refreshFriendListAndRanking() {
-    if (!currentUid) return;
-    const friends = await loadFriendsData();
-    renderFriendList(friends);
-
-    let selfData = null;
-    try {
-      const selfSnap = await getDoc(doc(db, 'users', currentUid));
-      if (selfSnap.exists()) {
-        const d = selfSnap.data();
-        selfData = {
-          nickname: (typeof d.nickname === 'string' && d.nickname) ? d.nickname : 'あなた',
-          bestScore: typeof d.bestScore === 'number' ? d.bestScore : null
-        };
-      }
-    } catch (e) {}
-    renderFriendRanking(friends, selfData);
-  }
-
-  async function refreshFriendsUi() {
-    const loginRequired = document.getElementById('friend-login-required');
-    const main = document.getElementById('friend-main');
-    if (!loginRequired || !main) return;
-
-    const user = auth.currentUser;
-    if (!user) {
-      loginRequired.style.display = 'block';
-      main.style.display = 'none';
-      return;
-    }
-    loginRequired.style.display = 'none';
-    main.style.display = 'block';
-
-    await refreshMyFriendCodeUi();
-    await refreshFriendRequestsUi();
-    await refreshSentFriendRequestsUi();
-    await refreshFriendListAndRanking();
-  }
-
-  async function handleFriendAdd() {
-    const input = document.getElementById('friend-add-input');
-    const btn = document.getElementById('friend-add-btn');
-    const statusEl = document.getElementById('friend-add-status');
-    if (!input || !statusEl) return;
-
-    const code = normalizeFriendCodeInput(input.value);
-    statusEl.className = 'friend-status-text';
-
-    if (!code) {
-      statusEl.textContent = 'IDを入力してください';
-      statusEl.classList.add('is-error');
-      return;
-    }
-    if (!currentUid || !auth.currentUser) {
-      statusEl.textContent = 'ログインが必要です';
-      statusEl.classList.add('is-error');
-      return;
-    }
-
-    if (btn) { btn.disabled = true; btn.textContent = '追加中…'; }
-    statusEl.textContent = '検索中…';
-
-    try {
-      let target;
-      try {
-        target = await lookupFriendByCode(code);
-      } catch (lookupErr) {
-        console.warn('[RT] フレンドID検索に失敗しました', lookupErr);
-        if (lookupErr && lookupErr.code === 'functions/not-found') {
-          statusEl.textContent = 'そのIDのユーザーが見つかりません';
-        } else if (lookupErr && lookupErr.code === 'functions/invalid-argument') {
-          statusEl.textContent = 'フレンドIDの形式が正しくありません（例: SUN-AB23CD）';
-        } else if (lookupErr && lookupErr.code === 'functions/unauthenticated') {
-          statusEl.textContent = 'ログインが必要です';
-        } else {
-          statusEl.textContent = '検索中にエラーが発生しました。時間をおいて再度お試しください';
-        }
-        statusEl.classList.add('is-error');
-        return;
-      }
-
-      const toUid = target && target.uid;
-      if (!toUid) {
-        statusEl.textContent = 'そのIDのユーザーが見つかりません';
-        statusEl.classList.add('is-error');
-        return;
-      }
-      if (toUid === currentUid) {
-        statusEl.textContent = '自分のIDです';
-        statusEl.classList.add('is-error');
-        return;
-      }
-      if (await isAlreadyFriend(currentUid, toUid)) {
-        statusEl.textContent = 'すでにフレンドです';
-        statusEl.classList.add('is-error');
-        return;
-      }
-      const result = await sendFriendRequest(toUid);
-      if (result.ok) {
-        statusEl.textContent = 'フレンドリクエストを送信しました';
-        statusEl.classList.add('is-success');
-        input.value = '';
-        refreshSentFriendRequestsUi();
-      } else if (result.reason === 'already-pending') {
-        statusEl.textContent = 'このユーザーには既にリクエストを送信済みです';
-        statusEl.classList.add('is-error');
-      } else if (result.reason === 'already-friend') {
-        statusEl.textContent = 'すでにフレンドです';
-        statusEl.classList.add('is-error');
-      } else if (result.reason === 'rate-limited') {
-        statusEl.textContent = result.message || '送信間隔が短すぎます。しばらく待ってから再度お試しください';
-        statusEl.classList.add('is-error');
-      } else {
-        statusEl.textContent = 'リクエストの送信に失敗しました';
-        statusEl.classList.add('is-error');
-      }
-    } catch (e) {
-      console.warn('[RT] フレンド追加処理に失敗しました', e);
-      statusEl.textContent = 'エラーが発生しました';
-      statusEl.classList.add('is-error');
-    } finally {
-      if (btn) { btn.disabled = false; btn.textContent = '追加'; }
-    }
-  }
-
-  function bindFriendControls() {
-    const copyBtn = document.getElementById('friend-copy-code-btn');
-    if (copyBtn && !copyBtn.dataset.bound) {
-      copyBtn.dataset.bound = '1';
-      copyBtn.addEventListener('click', function () {
-        const codeEl = document.getElementById('friend-my-code');
-        const code = codeEl ? codeEl.textContent : '';
-        if (!code || code === '–') return;
-        const done = function () {
-          const original = copyBtn.textContent;
-          copyBtn.textContent = 'コピーしました';
-          setTimeout(function () { copyBtn.textContent = original; }, 1400);
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(code).then(done).catch(function () {});
-        }
-      });
-    }
-
-    const addBtn = document.getElementById('friend-add-btn');
-    if (addBtn && !addBtn.dataset.bound) {
-      addBtn.dataset.bound = '1';
-      addBtn.addEventListener('click', function () { handleFriendAdd(); });
-    }
-
-    const addInput = document.getElementById('friend-add-input');
-    if (addInput && !addInput.dataset.bound) {
-      addInput.dataset.bound = '1';
-      addInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') handleFriendAdd();
-      });
-    }
-
-    const requestsList = document.getElementById('friend-requests-list');
-    if (requestsList && !requestsList.dataset.bound) {
-      requestsList.dataset.bound = '1';
-      requestsList.addEventListener('click', async function (e) {
-        const btn = e.target.closest('.friend-req-btn');
-        if (!btn) return;
-        const row = e.target.closest('.friend-request-row');
-        const fromUid = row ? row.getAttribute('data-from-uid') : null;
-        if (!fromUid) return;
-        btn.disabled = true;
-        if (btn.dataset.action === 'accept') {
-          await acceptFriendRequest(fromUid);
-        } else {
-          await declineFriendRequest(fromUid);
-        }
-        refreshFriendRequestsUi();
-        refreshFriendListAndRanking();
-      });
-    }
-
-    const sentRequestsList = document.getElementById('friend-sent-requests-list');
-    if (sentRequestsList && !sentRequestsList.dataset.bound) {
-      sentRequestsList.dataset.bound = '1';
-      sentRequestsList.addEventListener('click', async function (e) {
-        const btn = e.target.closest('.friend-req-btn');
-        if (!btn || btn.dataset.action !== 'cancel') return;
-        const row = e.target.closest('.friend-request-row');
-        const toUid = row ? row.getAttribute('data-to-uid') : null;
-        if (!toUid) return;
-        btn.disabled = true;
-        await cancelFriendRequest(toUid);
-        refreshSentFriendRequestsUi();
-      });
-    }
-
-    const friendGoogleBtn = document.getElementById('friend-google-btn');
-    if (friendGoogleBtn && !friendGoogleBtn.dataset.bound) {
-      friendGoogleBtn.dataset.bound = '1';
-      friendGoogleBtn.addEventListener('click', function () { window.RT.signInWithGoogle(); });
-    }
-
-    document.querySelectorAll('.account-tab-btn').forEach(function (tabBtn) {
-      if (tabBtn.dataset.bound) return;
-      tabBtn.dataset.bound = '1';
-      tabBtn.addEventListener('click', function () {
-        const target = tabBtn.getAttribute('data-tab');
-        document.querySelectorAll('.account-tab-btn').forEach(function (b) { b.classList.toggle('active', b === tabBtn); });
-        document.querySelectorAll('.account-tab-panel').forEach(function (p) {
-          p.style.display = (p.getAttribute('data-tab-panel') === target) ? 'block' : 'none';
-        });
-        if (target === 'friends') {
-          refreshFriendsUi();
-        }
-      });
-    });
-  }
-  // ▲▲ フレンド機能ここまで ▲▲
 
   // signin.html から送信されたメールリンクでの戻りを検知し、ログインを完了させる
   async function completeEmailLinkSignInIfNeeded() {
@@ -3288,16 +2474,9 @@
       window.location.replace('./signin.html');
       return;
     }
-
-    const friendsTabPanel = document.querySelector('.account-tab-panel[data-tab-panel="friends"]');
-    if (friendsTabPanel && friendsTabPanel.style.display !== 'none') {
-      refreshFriendsUi();
-    }
   });
 
   function bindAccountControls() {
-    bindFriendControls();
-
     const loginBtn = document.getElementById('google-login-btn');
     if (loginBtn && !loginBtn.dataset.bound) {
       loginBtn.dataset.bound = '1';

@@ -4,11 +4,9 @@ service cloud.firestore {
 
     // ------------------------------------------------------------------
     // users/{uid}
-    //   - 誰でも読み取り可（世界ランキング／フレンドのプロフィール表示のため）
+    //   - 誰でも読み取り可（世界ランキング表示のため）
     //   - 書き込みは本人のみ
     //   - 主要フィールドの型・範囲・改ざん防止（記録の巻き戻し禁止など）を検証
-    //   - friends / friendRequests はサブコレクションで別管理するため、
-    //     ここでは親ドキュメントへのフィールドとしての friends 書き込みは許可しない
     // ------------------------------------------------------------------
     match /users/{uid} {
 
@@ -29,8 +27,7 @@ service cloud.firestore {
       }
 
       // 統計フィールド（bestScore / attemptCount / totalTimeSum / recentHistory /
-      // recentRawMs / suspicious / tooFastStreak / bannedUntil / friendCode /
-      // friendCodeAttemptAt / lastFriendRequestAt / pendingSentCount /
+      // recentRawMs / suspicious / tooFastStreak / bannedUntil /
       // photoURL / createdAt / updatedAt）は、Cloud Functions内の Admin SDK からのみ書き込む。
       // photoURL は syncProfile（Admin SDK）が、検証済みIDトークンのクレームから設定する。
       // クライアントが任意の画像URLを自称できてしまうと、フィッシングや不快な画像の
@@ -38,7 +35,7 @@ service cloud.firestore {
       // Admin SDK はセキュリティルールの対象外のため、ここで許可する必要はない。
       // むしろクライアントSDKからは絶対にこれらのフィールドへ触れさせない
       // （直接書き込みができてしまうと、レート制限もプレイ実在性の検証も
-      //   一切通さずにランキング・フレンド機能を荒らせてしまうため）。
+      //   一切通さずにランキングを荒らせてしまうため）。
       function onlyTouchesClientFields(before) {
         return request.resource.data.diff(before).affectedKeys().hasOnly(['nickname']);
       }
@@ -52,7 +49,7 @@ service cloud.firestore {
       allow read: if true;
 
       // クライアント（ブラウザ）からの直接書き込みは nickname のみ許可。
-      // friendCode・スコア等は Cloud Functions 経由でしか更新できない。
+      // スコア等は Cloud Functions 経由でしか更新できない。
       allow create: if isOwner()
         && request.resource.data.keys().hasOnly(['nickname'])
         && nicknameIsValid();
@@ -64,42 +61,6 @@ service cloud.firestore {
       allow delete: if false;
 
       // ----------------------------------------------------------------
-      // users/{uid}/friendRequests/{fromUid}
-      //   - 受信者(uid)本人のみ閲覧できる
-      //   - 作成・削除はすべて Cloud Functions（Admin SDK）経由のみ。
-      //     クライアントSDKからの直接書き込みはレート制限・不整合防止の
-      //     チェックを迂回できてしまうため一切禁止する。
-      // ----------------------------------------------------------------
-      match /friendRequests/{fromUid} {
-        allow read: if request.auth != null && request.auth.uid == uid;
-        allow create, update, delete: if false;
-      }
-
-      // ----------------------------------------------------------------
-      // users/{uid}/sentFriendRequests/{toUid}
-      //   - 自分（uid）が送信したリクエストの控え。
-      //     相手の friendRequests は受信者しか読めないため、
-      //     「自分が誰に送信中か」を確認する手段としてこちらを用意している
-      //     （重複送信の防止・送信済みリクエストのキャンセルUIに使用）。
-      //   - 作成・削除は Cloud Functions（Admin SDK）経由のみ。
-      // ----------------------------------------------------------------
-      match /sentFriendRequests/{toUid} {
-        allow read: if request.auth != null && request.auth.uid == uid;
-        allow create, update, delete: if false;
-      }
-
-      // ----------------------------------------------------------------
-      // users/{uid}/friends/{friendUid}
-      //   - 相互フレンド関係。承認処理（Cloud Functions）で自分側・相手側の
-      //     双方に1件ずつ作成される。
-      //   - 作成・削除は Cloud Functions（Admin SDK）経由のみ。
-      // ----------------------------------------------------------------
-      match /friends/{friendUid} {
-        allow read: if request.auth != null && request.auth.uid == uid;
-        allow create, update, delete: if false;
-      }
-
-      // ----------------------------------------------------------------
       // users/{uid}/rounds/{roundId}
       //   - Cloud Functions（startRound / submitScore）専用のワンタイム
       //     トークン置き場。クライアントSDKからは読み書き一切不可。
@@ -108,20 +69,6 @@ service cloud.firestore {
       match /rounds/{roundId} {
         allow read, write: if false;
       }
-    }
-
-    // ------------------------------------------------------------------
-    // friendCodes/{code}
-    //   - フレンドID → uid の逆引き用。
-    //   - 検索は Cloud Functions（lookupFriendCode）経由に一本化したため、
-    //     クライアントSDKからの直接読み取りは不要かつ禁止する
-    //     （不要な直接クエリ経路を残さないことで攻撃面を減らす）。
-    //   - 発行は Cloud Functions（ensureFriendCode, Admin SDK）経由のみ。
-    //     クライアントSDKからの直接作成は一切禁止（二重発行・不整合の防止）。
-    // ------------------------------------------------------------------
-    match /friendCodes/{code} {
-      allow read: if false;
-      allow create, update, delete: if false;
     }
   }
 }

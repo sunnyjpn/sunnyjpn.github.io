@@ -9,31 +9,9 @@ const db = getFirestore();
 // ---- ランキング荒らし対策のパラメータ ----
 const MIN_MS = 50;                 // 許容する反応時間の下限
 const MAX_MS = 1000;               // 許容する反応時間の上限
-const MIN_WAIT_FLOOR_MS = 1500;    // 実際の待機は2000〜5000msあるため、安全マージンを引いた最低ライン
+const MIN_WAIT_FLOOR_MS = 900;     // 実際の待機は1000〜2500msのため、安全マージンを引いた最低ライン
 const ROUND_EXPIRY_MS = 60 * 1000; // startRound発行から60秒以内に送信すること（放置トークンの悪用防止）
 const SUBMIT_COOLDOWN_MS = 5000;   // 1ユーザーが連続でスコアを送信できる最短間隔（5秒に1回で十分）
-const RECENT_RAW_MAX = 8;          // 同一値の連続検知に使う直近の生スコア保持数
-const REPEAT_FLAG_THRESHOLD = 6;   // 直近8件中6件以上が同一(丸め一致)ならBot疑いとしてフラグ
-
-// ---- フレンド機能のパラメータ ----
-const FRIEND_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 紛らわしい文字(0/O, 1/I)は除外
-const FRIEND_CODE_LENGTH = 6;
-const FRIEND_CODE_MAX_ATTEMPTS = 10;      // 衝突時の再抽選回数上限
-const FRIEND_REQUEST_COOLDOWN_MS = 3000;  // 連続送信の最短間隔
-const MAX_PENDING_SENT_REQUESTS = 30;     // 未承認のまま送信できるリクエスト数の上限（荒らし防止）
-
-function generateFriendCode() {
-  let code = '';
-  for (let i = 0; i < FRIEND_CODE_LENGTH; i++) {
-    code += FRIEND_CODE_CHARS.charAt(Math.floor(Math.random() * FRIEND_CODE_CHARS.length));
-  }
-  return 'SUN-' + code;
-}
-
-// フレンドID自体の書式チェック（サーバー側でも必ず検証する。クライアントの正規化に依存しない）
-function isValidFriendCodeFormat(code) {
-  return typeof code === 'string' && /^SUN-[A-Z2-9]{6}$/.test(code);
-}
 
 /**
  * 表示名・アイコン画像の同期。
@@ -72,99 +50,6 @@ exports.syncProfile = onCall(async (request) => {
 
   await userRef.set(payload, { merge: true });
   return { ok: true, photoURL: photoURL };
-});
-
-/**
- * 自分のフレンドIDを取得する。未発行なら、他と衝突しないIDをサーバー側で新規発行する。
- * friendCode は Admin SDK からのみ書き込める設計（firestore.rules参照）なので、
- * この関数がその唯一の発行経路になる。
- */
-exports.ensureFriendCode = onCall(async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'ログインが必要です');
-  }
-  const uid = request.auth.uid;
-  const userRef = db.collection('users').doc(uid);
-
-  const existing = await userRef.get();
-  if (existing.exists && typeof existing.data().friendCode === 'string' && existing.data().friendCode) {
-    return { friendCode: existing.data().friendCode };
-  }
-
-  for (let attempt = 0; attempt < FRIEND_CODE_MAX_ATTEMPTS; attempt++) {
-    const code = generateFriendCode();
-    const codeRef = db.collection('friendCodes').doc(code);
-
-    try {
-      const assigned = await db.runTransaction(async (tx) => {
-        const [codeSnap, userSnap] = await Promise.all([tx.get(codeRef), tx.get(userRef)]);
-
-        // 直前の呼び出しと競合して、その間に発行済みになっていた場合はそれを採用
-        if (userSnap.exists && typeof userSnap.data().friendCode === 'string' && userSnap.data().friendCode) {
-          return userSnap.data().friendCode;
-        }
-        if (codeSnap.exists) {
-          return null; // 衝突。呼び出し元でリトライする。
-        }
-
-        tx.set(codeRef, { uid: uid, createdAt: FieldValue.serverTimestamp() });
-        tx.set(userRef, {
-          friendCode: code,
-          updatedAt: FieldValue.serverTimestamp(),
-          createdAt: userSnap.exists ? (userSnap.data().createdAt || FieldValue.serverTimestamp()) : FieldValue.serverTimestamp()
-        }, { merge: true });
-
-        return code;
-      });
-
-      if (assigned) return { friendCode: assigned };
-    } catch (e) {
-      // 稀な同時書き込み衝突。次のループでリトライする。
-    }
-  }
-
-  throw new HttpsError('resource-exhausted', 'フレンドIDの発行に失敗しました。もう一度お試しください');
-});
-
-/**
- * フレンドIDからユーザーを検索する。
- * 以前はクライアントSDKから friendCodes/{code} を直接読んでいたが、
- * ・存在しないコレクション/古いキャッシュを掴んだ場合にエラー原因が分かりにくい
- * ・Firestoreの読み取り課金がクライアント数だけ発生する
- * といった問題があったため、Cloud Functions経由の検索に一本化する。
- * 併せて、書式が不正なコードは早期に弾いて分かりやすいエラーを返す。
- */
-exports.lookupFriendCode = onCall(async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'ログインが必要です');
-  }
-  const rawCode = (request.data && request.data.code) || '';
-  const code = String(rawCode).trim().toUpperCase();
-
-  if (!isValidFriendCodeFormat(code)) {
-    throw new HttpsError('invalid-argument', 'フレンドIDの形式が正しくありません（例: SUN-AB23CD）');
-  }
-
-  const codeSnap = await db.collection('friendCodes').doc(code).get();
-  if (!codeSnap.exists) {
-    throw new HttpsError('not-found', 'そのフレンドIDのユーザーは見つかりませんでした');
-  }
-  const targetUid = codeSnap.data().uid;
-  if (!targetUid) {
-    throw new HttpsError('not-found', 'そのフレンドIDのユーザーは見つかりませんでした');
-  }
-  if (targetUid === request.auth.uid) {
-    throw new HttpsError('invalid-argument', '自分自身のフレンドIDです');
-  }
-
-  const userSnap = await db.collection('users').doc(targetUid).get();
-  const userData = userSnap.exists ? userSnap.data() : {};
-
-  return {
-    uid: targetUid,
-    nickname: (typeof userData.nickname === 'string' && userData.nickname) ? userData.nickname : '名無し',
-    photoURL: (typeof userData.photoURL === 'string' && userData.photoURL) ? userData.photoURL : null
-  };
 });
 
 /**
@@ -254,35 +139,14 @@ exports.submitScore = onCall(async (request) => {
       }
     }
 
-    // --- 異常検知：同一値の連続送信（Botらしいパターン）をフラグ付け ---
-    const recentRaw = Array.isArray(user.recentRawMs) ? user.recentRawMs.slice(-(RECENT_RAW_MAX - 1)) : [];
-    recentRaw.push(roundedMs);
-    let suspicious = !!user.suspicious;
-    if (recentRaw.length >= REPEAT_FLAG_THRESHOLD) {
-      const counts = {};
-      let maxCount = 0;
-      recentRaw.forEach(function (v) {
-        counts[v] = (counts[v] || 0) + 1;
-        if (counts[v] > maxCount) maxCount = counts[v];
-      });
-      if (maxCount >= REPEAT_FLAG_THRESHOLD) suspicious = true;
-    }
-
     const prevBest = typeof user.bestScore === 'number' ? user.bestScore : null;
     const bestScore = prevBest === null ? roundedMs : Math.min(prevBest, roundedMs);
     const isNewBest = prevBest === null || roundedMs < prevBest;
     const attemptCount = (typeof user.attemptCount === 'number' ? user.attemptCount : 0) + 1;
-    const totalTimeSum = (typeof user.totalTimeSum === 'number' ? user.totalTimeSum : 0) + roundedMs;
-    const recentHistory = Array.isArray(user.recentHistory) ? user.recentHistory.slice(-4) : [];
-    recentHistory.push(roundedMs);
 
     const payload = {
       bestScore: bestScore,
       attemptCount: attemptCount,
-      totalTimeSum: totalTimeSum,
-      recentHistory: recentHistory,
-      recentRawMs: recentRaw,
-      suspicious: suspicious,
       updatedAt: FieldValue.serverTimestamp()
     };
     if (!userSnap.exists) payload.createdAt = FieldValue.serverTimestamp();
@@ -290,198 +154,10 @@ exports.submitScore = onCall(async (request) => {
     tx.set(userRef, payload, { merge: true });
     tx.update(roundRef, { used: true });
 
-    return { bestScore: bestScore, attemptCount: attemptCount, totalTimeSum: totalTimeSum, isNewBest: isNewBest, suspicious: suspicious };
+    return { bestScore: bestScore, attemptCount: attemptCount, isNewBest: isNewBest };
   });
 
   return Object.assign({ ok: true }, result);
-});
-
-/**
- * フレンドリクエストの送信。
- * 相手には friendRequests/{自分のuid} を、自分には sentFriendRequests/{相手のuid} を作成する。
- * どちらもクライアントSDKからは直接書き込めない設計（firestore.rules参照）ため、
- * この関数を経由することで、なりすまし送信・大量送信を防止する。
- */
-exports.sendFriendRequest = onCall(async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'ログインが必要です');
-  }
-  const uid = request.auth.uid;
-  const toUid = (request.data && request.data.toUid) || null;
-
-  if (typeof toUid !== 'string' || !toUid) {
-    throw new HttpsError('invalid-argument', 'toUid が不正です');
-  }
-  if (toUid === uid) {
-    throw new HttpsError('invalid-argument', '自分自身をフレンドに追加することはできません');
-  }
-
-  const userRef = db.collection('users').doc(uid);
-  const toUserRef = db.collection('users').doc(toUid);
-
-  const toUserSnap = await toUserRef.get();
-  if (!toUserSnap.exists) {
-    throw new HttpsError('not-found', '指定されたユーザーが見つかりません');
-  }
-
-  const friendRef = userRef.collection('friends').doc(toUid);
-  if ((await friendRef.get()).exists) {
-    throw new HttpsError('already-exists', 'すでにフレンドです');
-  }
-
-  const sentRef = userRef.collection('sentFriendRequests').doc(toUid);
-  const incomingRef = toUserRef.collection('friendRequests').doc(uid);
-
-  if ((await sentRef.get()).exists) {
-    throw new HttpsError('already-exists', 'すでにリクエストを送信済みです');
-  }
-
-  const userSnap = await userRef.get();
-  const userData = userSnap.exists ? userSnap.data() : {};
-
-  const now = Timestamp.now();
-  if (userData.lastFriendRequestAt) {
-    const sinceLast = now.toMillis() - userData.lastFriendRequestAt.toMillis();
-    if (sinceLast < FRIEND_REQUEST_COOLDOWN_MS) {
-      throw new HttpsError('resource-exhausted', '送信間隔が短すぎます。しばらく待ってから再度お試しください');
-    }
-  }
-
-  const pendingSentCount = typeof userData.pendingSentCount === 'number' ? userData.pendingSentCount : 0;
-  if (pendingSentCount >= MAX_PENDING_SENT_REQUESTS) {
-    throw new HttpsError('resource-exhausted', '未承認のリクエストが多すぎます。相手の承認を待つか、キャンセルしてください');
-  }
-
-  // 相手が同時に自分へ既にリクエストを送っていた場合は、送信済みリクエストとして扱わせず
-  // 相互承認扱い（自動でフレンド成立）にする方が親切だが、まずはシンプルに拒否する。
-  const reverseIncomingRef = userRef.collection('friendRequests').doc(toUid);
-  if ((await reverseIncomingRef.get()).exists) {
-    throw new HttpsError('already-exists', '相手からのリクエストが届いています。そちらを承認してください');
-  }
-
-  const batch = db.batch();
-  batch.set(incomingRef, {
-    fromNickname: (typeof userData.nickname === 'string' && userData.nickname) ? userData.nickname : null,
-    fromCode: (typeof userData.friendCode === 'string' && userData.friendCode) ? userData.friendCode : null,
-    fromPhotoURL: (typeof userData.photoURL === 'string' && userData.photoURL) ? userData.photoURL : null,
-    createdAt: FieldValue.serverTimestamp()
-  });
-  batch.set(sentRef, { createdAt: FieldValue.serverTimestamp() });
-  batch.set(userRef, {
-    lastFriendRequestAt: FieldValue.serverTimestamp(),
-    pendingSentCount: pendingSentCount + 1
-  }, { merge: true });
-  await batch.commit();
-
-  return { ok: true };
-});
-
-/**
- * 送信済みフレンドリクエストのキャンセル（送信者側から取り消す）。
- */
-exports.cancelFriendRequest = onCall(async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'ログインが必要です');
-  }
-  const uid = request.auth.uid;
-  const toUid = (request.data && request.data.toUid) || null;
-  if (typeof toUid !== 'string' || !toUid) {
-    throw new HttpsError('invalid-argument', 'toUid が不正です');
-  }
-
-  const userRef = db.collection('users').doc(uid);
-  const sentRef = userRef.collection('sentFriendRequests').doc(toUid);
-  const incomingRef = db.collection('users').doc(toUid).collection('friendRequests').doc(uid);
-
-  const sentSnap = await sentRef.get();
-  if (!sentSnap.exists) {
-    // 既に存在しない（相手に承認/拒否された、もしくは二重キャンセル）場合は成功扱いで良い
-    return { ok: true };
-  }
-
-  const userSnap = await userRef.get();
-  const pendingSentCount = userSnap.exists && typeof userSnap.data().pendingSentCount === 'number'
-    ? userSnap.data().pendingSentCount
-    : 0;
-
-  const batch = db.batch();
-  batch.delete(sentRef);
-  batch.delete(incomingRef);
-  batch.set(userRef, { pendingSentCount: Math.max(0, pendingSentCount - 1) }, { merge: true });
-  await batch.commit();
-
-  return { ok: true };
-});
-
-/**
- * フレンドリクエストの承認。双方の friends サブコレクションに1件ずつ作成し、
- * 該当するリクエスト記録（friendRequests / sentFriendRequests）を削除する。
- */
-exports.acceptFriendRequest = onCall(async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'ログインが必要です');
-  }
-  const uid = request.auth.uid;
-  const fromUid = (request.data && request.data.fromUid) || null;
-  if (typeof fromUid !== 'string' || !fromUid) {
-    throw new HttpsError('invalid-argument', 'fromUid が不正です');
-  }
-
-  const myRef = db.collection('users').doc(uid);
-  const incomingRef = myRef.collection('friendRequests').doc(fromUid);
-  const incomingSnap = await incomingRef.get();
-  if (!incomingSnap.exists) {
-    throw new HttpsError('not-found', 'そのフレンドリクエストは見つかりませんでした（キャンセル済みの可能性があります）');
-  }
-
-  const fromRef = db.collection('users').doc(fromUid);
-  const sentRef = fromRef.collection('sentFriendRequests').doc(uid);
-  const fromUserSnap = await fromRef.get();
-  const pendingSentCount = fromUserSnap.exists && typeof fromUserSnap.data().pendingSentCount === 'number'
-    ? fromUserSnap.data().pendingSentCount
-    : 0;
-
-  const batch = db.batch();
-  batch.set(myRef.collection('friends').doc(fromUid), { createdAt: FieldValue.serverTimestamp() });
-  batch.set(fromRef.collection('friends').doc(uid), { createdAt: FieldValue.serverTimestamp() });
-  batch.delete(incomingRef);
-  batch.delete(sentRef);
-  batch.set(fromRef, { pendingSentCount: Math.max(0, pendingSentCount - 1) }, { merge: true });
-  await batch.commit();
-
-  return { ok: true };
-});
-
-/**
- * フレンドリクエストの拒否。フレンド関係は作らず、リクエスト記録だけを削除する。
- */
-exports.declineFriendRequest = onCall(async (request) => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'ログインが必要です');
-  }
-  const uid = request.auth.uid;
-  const fromUid = (request.data && request.data.fromUid) || null;
-  if (typeof fromUid !== 'string' || !fromUid) {
-    throw new HttpsError('invalid-argument', 'fromUid が不正です');
-  }
-
-  const myRef = db.collection('users').doc(uid);
-  const incomingRef = myRef.collection('friendRequests').doc(fromUid);
-  const fromRef = db.collection('users').doc(fromUid);
-  const sentRef = fromRef.collection('sentFriendRequests').doc(uid);
-
-  const fromUserSnap = await fromRef.get();
-  const pendingSentCount = fromUserSnap.exists && typeof fromUserSnap.data().pendingSentCount === 'number'
-    ? fromUserSnap.data().pendingSentCount
-    : 0;
-
-  const batch = db.batch();
-  batch.delete(incomingRef);
-  batch.delete(sentRef);
-  batch.set(fromRef, { pendingSentCount: Math.max(0, pendingSentCount - 1) }, { merge: true });
-  await batch.commit();
-
-  return { ok: true };
 });
 
 /**
