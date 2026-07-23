@@ -7,7 +7,7 @@ initializeApp();
 const db = getFirestore();
 
 // ---- ランキング荒らし対策のパラメータ ----
-const MIN_MS = 50;                 // 許容する反応時間の下限
+const MIN_MS = 15;                 // 許容する反応時間の下限
 const MAX_MS = 1000;               // 許容する反応時間の上限
 const MIN_WAIT_FLOOR_MS = 900;     // 実際の待機は1000〜2500msのため、安全マージンを引いた最低ライン
 const ROUND_EXPIRY_MS = 60 * 1000; // startRound発行から60秒以内に送信すること（放置トークンの悪用防止）

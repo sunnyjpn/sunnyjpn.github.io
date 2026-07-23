@@ -1271,7 +1271,7 @@
   const bestRecordFlash = document.getElementById('best-record-flash');
 
   const RECENT_HISTORY_MAX = 5;
-  const MIN_REACTION_MS = 100;
+  const MIN_REACTION_MS = 15;
   const MAX_REACTION_MS = 3000;
   const ROUND_EARLY_TOLERANCE_MS = 24;
   const SUSPICIOUS_LIMIT = 3;
@@ -1893,27 +1893,28 @@
   let audioPrimed = false;
 
   // 初回タップ（ユーザー操作）のタイミングで無音に近い状態で一度再生しておくことで、
-  // ブラウザ側のデコード準備を済ませ、実際の「Go!」再生時の遅延を減らす
+  // ブラウザ側のデコード準備を済ませ、実際の「Go!」再生時の遅延を減らす。
+  //
+  // 修正: 以前は goSound / resultSound の実体（本番再生に使うAudioオブジェクト）
+  // をそのまま使って play()→pause() していたため、pause() が非同期（play()の
+  // Promise解決後）に発火するタイミング次第で、本物の再生（playGameSound）と
+  // 競合し、鳴った直後に無音化されてしまう不具合があった（音が鳴ったり鳴らな
+  // かったりする原因）。
+  // 対策として、プライミング専用に複製（cloneNode）したAudio要素を使い、
+  // 本番再生に使うインスタンスには一切触れないようにする。
   function primeAudioOnce() {
     if (audioPrimed) return;
     audioPrimed = true;
     gameSounds.forEach(function (audio) {
       try {
-        const originalVolume = audio.volume;
-        audio.volume = 0;
-        const p = audio.play();
+        const primer = audio.cloneNode(true);
+        primer.volume = 0;
+        primer.muted = true;
+        const p = primer.play();
         if (p && typeof p.then === 'function') {
           p.then(function () {
-            audio.pause();
-            audio.currentTime = 0;
-            audio.volume = originalVolume;
-          }).catch(function () {
-            audio.volume = originalVolume;
-          });
-        } else {
-          audio.pause();
-          audio.currentTime = 0;
-          audio.volume = originalVolume;
+            try { primer.pause(); } catch (e) {}
+          }).catch(function () {});
         }
       } catch (e) {}
     });
