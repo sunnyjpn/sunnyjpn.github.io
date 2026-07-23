@@ -1095,6 +1095,19 @@
     text-align: center;
   }
 
+  #site-footer {
+    padding: 0 20px 40px;
+    text-align: center;
+  }
+
+  #site-footer-copyright,
+  #site-footer-version {
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.8;
+    color: rgba(255,255,255,0.35);
+  }
+
   #account-footer-inner {
     display: inline-flex;
     align-items: center;
@@ -1192,10 +1205,45 @@
   @media (prefers-reduced-motion: reduce) {
     #login-splash, .login-splash-card { transition: none; }
   }
-  /* ▲▲ ログイン誘導オーバーレイここまで ▲▲ */
+  /* ▲▲ ログイン誘導オーバーレイここまで ▲▲ */  /* ▼▼ 認証確認ゲート（本物のログイン確認が終わるまで操作不能にする） ▼▼ */
+  #auth-gate-overlay {
+    position: fixed;
+    inset: 0;
+    background: #0a0a0c;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #auth-gate-text {
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    letter-spacing: 0.05em;
+  }
+
+  #auth-gate-overlay.hidden {
+    display: none;
+  }
+  /* ▲▲ 認証確認ゲートここまで ▲▲ */
 </style>
 </head>
 <body translate="no" class="notranslate">
+  <div id="auth-gate-overlay"><div id="auth-gate-text">確認中…</div></div>
+  <script>
+    // フェイルセーフ：何らかの理由でFirebaseの認証確認が完了しない場合
+    // （広告ブロッカーやネットワーク障害でスクリプトが読み込めない等）、
+    // 一定時間が経っても認証ゲートが解除されなければ、安全側に倒してサインインページへ送る。
+    (function () {
+      if (/\/signin(\.html)?\/?$/.test(window.location.pathname)) return;
+      setTimeout(function () {
+        const gate = document.getElementById('auth-gate-overlay');
+        if (gate && !gate.classList.contains('hidden')) {
+          window.location.replace('./signin.html');
+        }
+      }, 6000);
+    })();
+  </script>
   <div id="scroll-progress"></div>
   <noscript>
     <p>反応速度テスト（Reaction Time Test）を利用するにはJavaScriptを有効にしてください。画面が緑色に変わった瞬間にタップして、あなたの反応速度（リアクションタイム）を測定できます。</p>
@@ -1417,6 +1465,11 @@
     </div>
   </footer>
 
+  <footer id="site-footer">
+    <p id="site-footer-copyright">© 2026 Sunny Pulse. All Rights Reserved.</p>
+    <p id="site-footer-version">Reaction Time Test v1.0.0</p>
+  </footer>
+
   <div id="login-splash" aria-hidden="true">
     <div class="login-splash-card">
       <p class="login-splash-title">記録を、失わない。</p>
@@ -1561,7 +1614,6 @@
   let state = 'idle';
   let startTime = 0;
   let waitTimer = null;
-  let activeWaitSoundTimer = null;
   let retrievingTimer = null;
   let lastResult = null;
   let bestScore = null;
@@ -1749,7 +1801,6 @@
   function setIdleScreen() {
     state = 'idle';
     clearTimeout(waitTimer);
-    clearTimeout(activeWaitSoundTimer);
     clearTimeout(retrievingTimer);
     activeRound = null;
     box.style.backgroundColor = COLOR_IDLE;
@@ -1772,18 +1823,7 @@
 
     const delay = 1500 + Math.random() * 1500;
     beginIntegrityRound(delay);
-
-    const soundLeadMs = 180;
-    const soundDelay = Math.max(0, delay - soundLeadMs);
-    const goSoundTimer = setTimeout(function () {
-      try {
-        goSound.currentTime = 0;
-        goSound.play().catch(function () {});
-      } catch (e) {}
-    }, soundDelay);
-
     waitTimer = setTimeout(setReadyScreen, delay);
-    activeWaitSoundTimer = goSoundTimer;
   }
 
   function setReadyScreen() {
@@ -1794,12 +1834,15 @@
     startTime = performance.now();
     markRoundReady();
     vibrateFeedback(40);
+    try {
+      goSound.currentTime = 0;
+      goSound.play().catch(function () {});
+    } catch (e) {}
   }
 
   function setTooSoonScreen() {
     state = 'toosoon';
     clearTimeout(waitTimer);
-    clearTimeout(activeWaitSoundTimer);
     clearTimeout(retrievingTimer);
     if (retrievingText) retrievingText.style.display = 'none';
     if (activeRound) activeRound.used = true;
@@ -1820,7 +1863,6 @@
   function setRetrievingScreen(ms, verdict) {
     state = 'retrieving';
     clearTimeout(waitTimer);
-    clearTimeout(activeWaitSoundTimer);
     clearTimeout(retrievingTimer);
     box.style.backgroundColor = COLOR_RESULT;
     idleTitle.style.display = 'none';
@@ -2235,7 +2277,7 @@
     serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
   import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
-  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-check.js";
+  // import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-check.js"; // App Check無効化中
   import { getAnalytics, isSupported as analyticsIsSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
 
   const firebaseConfig = {
@@ -2256,10 +2298,16 @@
   // 差し替えること（下記はプレースホルダーのため、このままでは機能しない）。
   // ローカル開発時は self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; を初期化前に設定すると
   // デバッグトークンが発行され、Console側に登録すればApp Check有効時でも動作確認できる。
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_V3_SITE_KEY'),
-    isTokenAutoRefreshEnabled: true
-  });
+  // ▼▼ App Check：一時的に無効化中 ▼▼
+  // 理由：プレースホルダーのサイトキー('YOUR_RECAPTCHA_V3_SITE_KEY')のまま有効化されており、
+  // すべての認証・Firestoreリクエストが不正判定され失敗していたため。
+  // 正しいreCAPTCHA v3サイトキーを発行してから再度有効化すること。
+  //
+  // initializeAppCheck(app, {
+  //   provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_V3_SITE_KEY'),
+  //   isTokenAutoRefreshEnabled: true
+  // });
+  // ▲▲ App Checkここまで ▲▲
 
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -2368,6 +2416,11 @@
     }
   };
 
+
+  function hideAuthGate() {
+    const gate = document.getElementById('auth-gate-overlay');
+    if (gate) gate.classList.add('hidden');
+  }
 
   function updateAccountUi(user) {
     const loginBtn = document.getElementById('google-login-btn');
@@ -3065,12 +3118,13 @@
   completeEmailLinkSignInIfNeeded();
 
   onAuthStateChanged(auth, function (user) {
-    if (user) {
+    if (user && !user.isAnonymous) {
       currentUid = user.uid;
       pullAndMerge(user.uid);
       updateAccountUi(user);
       loadNicknameUi(user.uid);
       window.localStorage.setItem('sunnySignedIn', '1');
+      hideAuthGate();
     } else {
       currentUid = null;
       window.localStorage.removeItem('sunnySignedIn');
