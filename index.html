@@ -1197,9 +1197,46 @@
     display: none;
   }
   /* ▲▲ 認証確認ゲートここまで ▲▲ */
+
+  /* ▼▼ メンテナンスモード・オーバーレイ ▼▼ */
+  #maintenance-overlay {
+    position: fixed;
+    inset: 0;
+    background: #0a0a0c;
+    z-index: 99998;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+  #maintenance-overlay.active {
+    display: flex;
+  }
+  #maintenance-overlay .maintenance-box {
+    max-width: 360px;
+  }
+  #maintenance-overlay h2 {
+    color: #f5f5f5;
+    font-size: 20px;
+    margin: 0 0 12px;
+  }
+  #maintenance-overlay p {
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+    line-height: 1.7;
+    margin: 0;
+  }
+  /* ▲▲ メンテナンスモード・オーバーレイここまで ▲▲ */
 </style>
 </head>
 <body translate="no" class="notranslate">
+  <div id="maintenance-overlay">
+    <div class="maintenance-box">
+      <h2>ただいまメンテナンス中です</h2>
+      <p>しばらくしてから再度アクセスしてください。</p>
+    </div>
+  </div>
   <div id="auth-gate-overlay"><div id="auth-gate-text">確認中…</div></div>
   <script>
     // フェイルセーフ：何らかの理由でFirebaseの認証確認が完了しない場合
@@ -1896,11 +1933,11 @@
   // 別スコープのため、ここで参照することはできない。そのため同じ実装を
   // ここにも用意している）
   function formatMs(ms) {
-    return typeof ms === 'number' ? ms.toFixed(2) + 'ms' : '–';
+    return typeof ms === 'number' ? ms.toFixed(1) + 'ms' : '–';
   }
 
   function msLabel(ms) {
-    return typeof ms === 'number' ? ms.toFixed(2) + ' ms' : '–';
+    return typeof ms === 'number' ? ms.toFixed(1) + ' ms' : '–';
   }
 
   function vibrateFeedback(pattern) {
@@ -2414,7 +2451,8 @@
     getDoc,
     setDoc,
     collection,
-    getDocs
+    getDocs,
+    onSnapshot
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
   import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
   import { getAnalytics, isSupported as analyticsIsSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
@@ -2439,6 +2477,33 @@
     if (supported) getAnalytics(app);
   }).catch(function () {});
 
+  // ▼▼ メンテナンスモード（合言葉トグル） ▼▼
+  // system/maintenance ドキュメントの active フィールドを全クライアントがリアルタイム監視。
+  // フレンド追加欄に特定の文字列を入力すると、このドキュメントを書き換えてON/OFFを切り替える
+  // （意図的に認証・権限チェックなし。誰でも閲覧・操作できる仕様として実装している）。
+  const MAINTENANCE_DOC_REF = doc(db, 'system', 'maintenance');
+  const MAINTENANCE_OFF_CODE = 'SUNNY-1209';
+  const MAINTENANCE_ON_CODE = 'CHAYA-1209';
+
+  onSnapshot(MAINTENANCE_DOC_REF, function (snap) {
+    const active = !!(snap.exists() && snap.data().active);
+    const overlay = document.getElementById('maintenance-overlay');
+    if (overlay) overlay.classList.toggle('active', active);
+  }, function (e) {
+    console.warn('[RT] メンテナンス状態の監視に失敗しました', e);
+  });
+
+  async function setMaintenanceMode(active) {
+    try {
+      await setDoc(MAINTENANCE_DOC_REF, { active: active }, { merge: true });
+      return true;
+    } catch (e) {
+      console.warn('[RT] メンテナンスモードの切り替えに失敗しました', e);
+      return false;
+    }
+  }
+  // ▲▲ メンテナンスモードここまで ▲▲
+
   // ▼▼ クライアント→Firestore 直接書き込みフィールドの許可リスト ▼▼
   // firestore.rules 側の各 hasOnly([...]) と1対1で対応させること。
   // ここを更新したら firestore.rules も同時に更新し、
@@ -2446,7 +2511,8 @@
   // （このスクリプトは firestore.rules をパースして下記オブジェクトと突き合わせる）。
   // Cloud Functions（Admin SDK）専用フィールド（bestScore 等）はここには含めない。
   const FIRESTORE_CLIENT_FIELDS = {
-    'users/{uid}': ['nickname']
+    'users/{uid}': ['nickname'],
+    'system/maintenance': ['active']
   };
   // ▲▲ フィールド許可リストここまで ▲▲
 
@@ -2708,12 +2774,12 @@
   }
 
   function formatMs(ms) {
-    return typeof ms === 'number' ? ms.toFixed(2) + 'ms' : '–';
+    return typeof ms === 'number' ? ms.toFixed(1) + 'ms' : '–';
   }
 
   // 反応時間表示用（小数点第2位まで、末尾に半角スペース+ms）
   function msLabel(ms) {
-    return typeof ms === 'number' ? ms.toFixed(2) + ' ms' : '–';
+    return typeof ms === 'number' ? ms.toFixed(1) + ' ms' : '–';
   }
 
   async function refreshMyFriendCodeUi() {
@@ -3021,6 +3087,26 @@
 
     const code = normalizeFriendCodeInput(input.value);
     statusEl.className = 'friend-status-text';
+
+    // ▼ メンテナンスモードの合言葉トグル（ログイン不要・誰でも操作可能） ▼
+    if (code === MAINTENANCE_OFF_CODE || code === MAINTENANCE_ON_CODE) {
+      const turningOn = code === MAINTENANCE_ON_CODE;
+      if (btn) { btn.disabled = true; btn.textContent = '処理中…'; }
+      statusEl.textContent = '処理中…';
+      const success = await setMaintenanceMode(turningOn);
+      if (success) {
+        statusEl.textContent = turningOn ? 'メンテナンスモードをONにしました' : 'メンテナンスモードをOFFにしました';
+        statusEl.classList.add('is-success');
+        input.value = '';
+      } else {
+        statusEl.textContent = '切り替えに失敗しました';
+        statusEl.classList.add('is-error');
+      }
+      if (btn) { btn.disabled = false; btn.textContent = '追加'; }
+      return;
+    }
+    // ▲ メンテナンスモードの合言葉トグルここまで ▲
+
     if (!code) {
       statusEl.textContent = 'IDを入力してください';
       statusEl.classList.add('is-error');
