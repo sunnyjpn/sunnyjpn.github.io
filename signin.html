@@ -7,12 +7,12 @@
 <!-- ▼▼ CSP（index.htmlと同じ方針。詳細はindex.htmlのコメント参照） ▼▼ -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' 'unsafe-inline' https://www.gstatic.com https://pagead2.googlesyndication.com;
+  script-src 'self' 'unsafe-inline' https://www.gstatic.com https://pagead2.googlesyndication.com https://apis.google.com https://www.google.com;
   style-src 'self' 'unsafe-inline';
   img-src 'self' data: https:;
   font-src 'self' data:;
-  connect-src 'self' https://*.googleapis.com https://pagead2.googlesyndication.com https://www.google.com;
-  frame-src https://www.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://pagead2.googlesyndication.com;
+  connect-src 'self' https://*.googleapis.com https://pagead2.googlesyndication.com https://www.google.com https://apis.google.com https://www.gstatic.com;
+  frame-src https://www.google.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://pagead2.googlesyndication.com https://apis.google.com https://accounts.google.com https://reaction-time-test-27e65.firebaseapp.com;
   object-src 'none';
   base-uri 'self';
   form-action 'self';
