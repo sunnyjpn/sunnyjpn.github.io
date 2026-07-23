@@ -2432,7 +2432,6 @@
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
   import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-functions.js";
   import { getAnalytics, isSupported as analyticsIsSupported } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js";
-  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-check.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDItQuV-iIkiZGMS4RGLC7phv6qqkp0gBM",
@@ -2445,19 +2444,6 @@
   };
 
   const app = initializeApp(firebaseConfig);
-
-  // ▼▼ App Check ▼▼
-  // Cloud Functions側で enforceAppCheck: true を指定しているため、
-  // クライアントが有効な App Check トークンを付与しないと
-  // Functionsの中身が実行される前に全リクエストが拒否される
-  // （= ensureFriendCode 等が常に失敗し「取得に失敗しました」になっていた原因）。
-  // Firebaseコンソールの「App Check」でこのサイト用の reCAPTCHA v3 サイトキーを
-  // 発行し、下記の 'YOUR_RECAPTCHA_V3_SITE_KEY' を置き換えること。
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_V3_SITE_KEY'),
-    isTokenAutoRefreshEnabled: true
-  });
-  // ▲▲ App Check ここまで ▲▲
 
   const auth = getAuth(app);
   const db = getFirestore(app);

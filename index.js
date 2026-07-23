@@ -7,10 +7,6 @@ initializeApp();
 const db = getFirestore();
 
 // ---- ランキング荒らし対策のパラメータ ----
-// 注：startRound / submitScore は enforceAppCheck: true により、
-//     Firebase App Check の有効なトークンを伴わないリクエストは
-//     関数の中身が実行される前にFirebase側で拒否される
-//     （Bot・スクリプトからの直接呼び出し・外部アプリからの流用を防止）。
 const MIN_MS = 50;                 // 許容する反応時間の下限
 const MAX_MS = 1000;               // 許容する反応時間の上限
 const MIN_WAIT_FLOOR_MS = 1500;    // 実際の待機は2000〜5000msあるため、安全マージンを引いた最低ライン
@@ -39,7 +35,7 @@ function generateFriendCode() {
  * friendCode は Admin SDK からのみ書き込める設計（firestore.rules参照）なので、
  * この関数がその唯一の発行経路になる。
  */
-exports.ensureFriendCode = onCall({ enforceAppCheck: true }, async (request) => {
+exports.ensureFriendCode = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'ログインが必要です');
   }
@@ -93,7 +89,7 @@ exports.ensureFriendCode = onCall({ enforceAppCheck: true }, async (request) => 
  * armedAt はサーバー時刻（Admin SDKのserverTimestamp）で記録するため、
  * クライアント側で改ざんすることはできない。
  */
-exports.startRound = onCall({ enforceAppCheck: true }, async (request) => {
+exports.startRound = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'ログインが必要です');
   }
@@ -117,7 +113,7 @@ exports.startRound = onCall({ enforceAppCheck: true }, async (request) => {
  *   startRound の呼び出し自体を偽装・省略することもできないため、
  *   「for文で submitScore を1万回呼ぶ」ような攻撃はこの時点で全て拒否される。
  */
-exports.submitScore = onCall({ enforceAppCheck: true }, async (request) => {
+exports.submitScore = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'ログインが必要です');
   }
@@ -221,7 +217,7 @@ exports.submitScore = onCall({ enforceAppCheck: true }, async (request) => {
  * どちらもクライアントSDKからは直接書き込めない設計（firestore.rules参照）ため、
  * この関数を経由することで、なりすまし送信・大量送信を防止する。
  */
-exports.sendFriendRequest = onCall({ enforceAppCheck: true }, async (request) => {
+exports.sendFriendRequest = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'ログインが必要です');
   }
@@ -297,7 +293,7 @@ exports.sendFriendRequest = onCall({ enforceAppCheck: true }, async (request) =>
 /**
  * 送信済みフレンドリクエストのキャンセル（送信者側から取り消す）。
  */
-exports.cancelFriendRequest = onCall({ enforceAppCheck: true }, async (request) => {
+exports.cancelFriendRequest = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'ログインが必要です');
   }
@@ -335,7 +331,7 @@ exports.cancelFriendRequest = onCall({ enforceAppCheck: true }, async (request) 
  * フレンドリクエストの承認。双方の friends サブコレクションに1件ずつ作成し、
  * 該当するリクエスト記録（friendRequests / sentFriendRequests）を削除する。
  */
-exports.acceptFriendRequest = onCall({ enforceAppCheck: true }, async (request) => {
+exports.acceptFriendRequest = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'ログインが必要です');
   }
@@ -373,7 +369,7 @@ exports.acceptFriendRequest = onCall({ enforceAppCheck: true }, async (request) 
 /**
  * フレンドリクエストの拒否。フレンド関係は作らず、リクエスト記録だけを削除する。
  */
-exports.declineFriendRequest = onCall({ enforceAppCheck: true }, async (request) => {
+exports.declineFriendRequest = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'ログインが必要です');
   }
