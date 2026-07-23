@@ -1493,6 +1493,25 @@
   const resultSound = new Audio('result-sound.mp3');
   resultSound.preload = 'auto';
   resultSound.volume = 0.85;
+  const gameSounds = [goSound, resultSound];
+
+  function stopAllGameSounds() {
+    gameSounds.forEach(function (audio) {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch (e) {}
+    });
+  }
+
+  function playGameSound(audio) {
+    if (!audio) return;
+    stopAllGameSounds();
+    try {
+      audio.currentTime = 0;
+      audio.play().catch(function () {});
+    } catch (e) {}
+  }
   const COLOR_RESULT = '#2B87D1';
   const COLOR_TOOSOON = '#2B87D1';
 
@@ -1982,10 +2001,7 @@
     mainText.textContent = labelState.actionWord + '!';
     subText.style.display = 'none';
     vibrateFeedback(40);
-    try {
-      goSound.currentTime = 0;
-      goSound.play().catch(function () {});
-    } catch (e) {}
+    playGameSound(goSound);
 
     // style変更の直後にperformance.now()を呼ぶと、まだブラウザが
     // 実際に緑色を「描画」する前の時刻になってしまい、計測開始点が
@@ -2025,8 +2041,7 @@
 
   // タップ直後は0.5〜0.75秒「Retrieving data...」を表示してから結果画面へ遷移する。
   // これにより、前の効果音（開始音）が鳴り終わってから結果音を再生でき、音の重なりを防止する。
-  const RETRIEVING_MIN_MS = 500;
-  const RETRIEVING_MAX_MS = 750;
+  const RETRIEVING_DELAY_MS = 600;
 
   function setRetrievingScreen(ms, verdict) {
     state = 'retrieving';
@@ -2038,11 +2053,10 @@
     subText.style.display = 'none';
     if (retrievingText) retrievingText.style.display = 'block';
 
-    const delay = RETRIEVING_MIN_MS + Math.random() * (RETRIEVING_MAX_MS - RETRIEVING_MIN_MS);
     retrievingTimer = setTimeout(function () {
       if (retrievingText) retrievingText.style.display = 'none';
       setResultScreen(ms, verdict);
-    }, delay);
+    }, RETRIEVING_DELAY_MS);
   }
 
   function setResultScreen(ms, verdict) {
@@ -2086,10 +2100,7 @@
     vibrateFeedback(accepted && isNewBest ? [30, 40, 30] : 25);
 
     if (accepted) {
-      try {
-        resultSound.currentTime = 0;
-        resultSound.play().catch(function () {});
-      } catch (e) {}
+      playGameSound(resultSound);
     }
 
     box.style.backgroundColor = COLOR_RESULT;
@@ -2147,7 +2158,7 @@
   function primeAudioOnce() {
     if (audioPrimed) return;
     audioPrimed = true;
-    [goSound, resultSound].forEach(function (audio) {
+    gameSounds.forEach(function (audio) {
       try {
         const originalVolume = audio.volume;
         audio.volume = 0;
@@ -3365,6 +3376,7 @@
 <!-- ▲▲ Firebaseここまで ▲▲ -->
 
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
