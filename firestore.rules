@@ -78,7 +78,8 @@ service cloud.firestore {
 
       // ----------------------------------------------------------------
       // users/{uid}/friendRequests/{fromUid}
-      //   - 受信者(uid)本人のみ閲覧・削除（承認/拒否）できる
+      //   - 受信者(uid)本人のみ閲覧できる
+      //   - 削除は 受信者(uid)本人（承認/拒否）または 送信者(fromUid)本人（キャンセル）が行える
       //   - 送信は fromUid 本人のみが、自分の uid をキーにしたリクエストとして作成できる
       //   - 既にリクエストが存在する場合は上書き不可（連投・改ざん防止）
       //   - 送信できるフィールドを厳密に制限する
@@ -95,13 +96,47 @@ service cloud.firestore {
                 || (request.resource.data.fromCode is string && request.resource.data.fromCode.size() <= 16));
         }
 
-        allow read, delete: if request.auth != null && request.auth.uid == uid;
+        allow read: if request.auth != null && request.auth.uid == uid;
+
+        // 受信者（承認/拒否）・送信者（キャンセル）のどちらからでも削除できる
+        allow delete: if request.auth != null
+          && (request.auth.uid == uid || request.auth.uid == fromUid);
 
         allow create: if request.auth != null
           && request.auth.uid == fromUid
           && fromUid != uid
           && resource == null
           && requestFieldsAreValid();
+
+        allow update: if false;
+      }
+
+      // ----------------------------------------------------------------
+      // users/{uid}/sentFriendRequests/{toUid}
+      //   - 自分（uid）が送信したリクエストの控え。
+      //     相手の friendRequests は受信者しか読めないため、
+      //     「自分が誰に送信中か」を確認する手段としてこちらを用意している
+      //     （重複送信の防止・送信済みリクエストのキャンセルUIに使用）。
+      //   - 作成は送信者本人（uid）のみ。
+      //   - 削除は 送信者本人（uid, キャンセル）または 受信者（toUid, 承認/拒否に連動した後片付け）が行える。
+      // ----------------------------------------------------------------
+      match /sentFriendRequests/{toUid} {
+
+        function sentFieldsAreValid() {
+          return request.resource.data.keys().hasOnly(['toUid', 'createdAt'])
+            && request.resource.data.toUid == toUid
+            && toUid != uid;
+        }
+
+        allow read: if request.auth != null && request.auth.uid == uid;
+
+        allow create: if request.auth != null
+          && request.auth.uid == uid
+          && resource == null
+          && sentFieldsAreValid();
+
+        allow delete: if request.auth != null
+          && (request.auth.uid == uid || request.auth.uid == toUid);
 
         allow update: if false;
       }

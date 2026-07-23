@@ -1270,6 +1270,11 @@
             <div id="friend-requests-list"></div>
           </div>
 
+          <div class="friend-block" id="friend-sent-requests-block" style="display:none;">
+            <div class="friend-section-title">送信中のリクエスト</div>
+            <div id="friend-sent-requests-list"></div>
+          </div>
+
           <div class="friend-block">
             <div class="friend-section-title">🏆 フレンドランキング</div>
             <div id="friend-ranking-list"><div class="friend-empty">まだフレンドがいません</div></div>
@@ -1556,6 +1561,7 @@
   let state = 'idle';
   let startTime = 0;
   let waitTimer = null;
+  let activeWaitSoundTimer = null;
   let retrievingTimer = null;
   let lastResult = null;
   let bestScore = null;
@@ -1743,6 +1749,7 @@
   function setIdleScreen() {
     state = 'idle';
     clearTimeout(waitTimer);
+    clearTimeout(activeWaitSoundTimer);
     clearTimeout(retrievingTimer);
     activeRound = null;
     box.style.backgroundColor = COLOR_IDLE;
@@ -1763,9 +1770,20 @@
     mainText.textContent = 'Wait for green';
     subText.style.display = 'none';
 
-    const delay = 2000 + Math.random() * 3000;
+    const delay = 1500 + Math.random() * 1500;
     beginIntegrityRound(delay);
+
+    const soundLeadMs = 180;
+    const soundDelay = Math.max(0, delay - soundLeadMs);
+    const goSoundTimer = setTimeout(function () {
+      try {
+        goSound.currentTime = 0;
+        goSound.play().catch(function () {});
+      } catch (e) {}
+    }, soundDelay);
+
     waitTimer = setTimeout(setReadyScreen, delay);
+    activeWaitSoundTimer = goSoundTimer;
   }
 
   function setReadyScreen() {
@@ -1776,15 +1794,12 @@
     startTime = performance.now();
     markRoundReady();
     vibrateFeedback(40);
-    try {
-      goSound.currentTime = 0;
-      goSound.play().catch(function () {});
-    } catch (e) {}
   }
 
   function setTooSoonScreen() {
     state = 'toosoon';
     clearTimeout(waitTimer);
+    clearTimeout(activeWaitSoundTimer);
     clearTimeout(retrievingTimer);
     if (retrievingText) retrievingText.style.display = 'none';
     if (activeRound) activeRound.used = true;
@@ -1805,6 +1820,7 @@
   function setRetrievingScreen(ms, verdict) {
     state = 'retrieving';
     clearTimeout(waitTimer);
+    clearTimeout(activeWaitSoundTimer);
     clearTimeout(retrievingTimer);
     box.style.backgroundColor = COLOR_RESULT;
     idleTitle.style.display = 'none';
@@ -2213,7 +2229,6 @@
     doc,
     getDoc,
     setDoc,
-    deleteDoc,
     collection,
     getDocs,
     runTransaction,
@@ -2494,29 +2509,67 @@
     if (!currentUid || !toUid || toUid === currentUid) return { ok: false, reason: 'invalid' };
     if (await isAlreadyFriend(currentUid, toUid)) return { ok: false, reason: 'already-friend' };
 
+    const requestRef = doc(db, 'users', toUid, 'friendRequests', currentUid);
+    const sentRef = doc(db, 'users', currentUid, 'sentFriendRequests', toUid);
+
     try {
       const myDoc = await getDoc(doc(db, 'users', currentUid));
       const myData = myDoc.exists() ? myDoc.data() : {};
-      await setDoc(doc(db, 'users', toUid, 'friendRequests', currentUid), {
-        fromUid: currentUid,
-        fromNickname: typeof myData.nickname === 'string' ? myData.nickname : '',
-        fromCode: typeof myData.friendCode === 'string' ? myData.friendCode : '',
-        createdAt: serverTimestamp(),
-        status: 'pending'
+
+      const result = await runTransaction(db, async function (tx) {
+        // トランザクション内で再確認することで、連打などによる二重送信を防ぐ
+        const sentSnap = await tx.get(sentRef);
+        if (sentSnap.exists()) return { ok: false, reason: 'already-pending' };
+
+        tx.set(requestRef, {
+          fromUid: currentUid,
+          fromNickname: typeof myData.nickname === 'string' ? myData.nickname : '',
+          fromCode: typeof myData.friendCode === 'string' ? myData.friendCode : '',
+          createdAt: serverTimestamp(),
+          status: 'pending'
+        });
+        tx.set(sentRef, { toUid: toUid, createdAt: serverTimestamp() });
+        return { ok: true };
       });
-      return { ok: true };
+
+      return result;
     } catch (e) {
       console.warn('[RT] フレンドリクエストの送信に失敗しました', e);
       return { ok: false, reason: 'error' };
     }
   }
 
+  // 送信済みのフレンドリクエストをキャンセルする（送信者側から取り消す）
+  async function cancelFriendRequest(toUid) {
+    if (!currentUid || !toUid) return;
+    try {
+      const requestRef = doc(db, 'users', toUid, 'friendRequests', currentUid);
+      const sentRef = doc(db, 'users', currentUid, 'sentFriendRequests', toUid);
+      await runTransaction(db, async function (tx) {
+        tx.delete(requestRef);
+        tx.delete(sentRef);
+      });
+    } catch (e) {
+      console.warn('[RT] フレンドリクエストのキャンセルに失敗しました', e);
+    }
+  }
+
   async function acceptFriendRequest(fromUid) {
     if (!currentUid || !fromUid) return;
     try {
-      await setDoc(doc(db, 'users', currentUid, 'friends', fromUid), { since: serverTimestamp() }, { merge: true });
-      await setDoc(doc(db, 'users', fromUid, 'friends', currentUid), { since: serverTimestamp() }, { merge: true });
-      await deleteDoc(doc(db, 'users', currentUid, 'friendRequests', fromUid));
+      const myFriendRef = doc(db, 'users', currentUid, 'friends', fromUid);
+      const otherFriendRef = doc(db, 'users', fromUid, 'friends', currentUid);
+      const requestRef = doc(db, 'users', currentUid, 'friendRequests', fromUid);
+      const senderSentRef = doc(db, 'users', fromUid, 'sentFriendRequests', currentUid);
+
+      // 1つのトランザクションにまとめることで、
+      // 「片側だけ友達になった／リクエストだけ消えて未成立」といった不整合を防ぐ
+      await runTransaction(db, async function (tx) {
+        tx.set(myFriendRef, { since: serverTimestamp() }, { merge: true });
+        tx.set(otherFriendRef, { since: serverTimestamp() }, { merge: true });
+        tx.delete(requestRef);
+        tx.delete(senderSentRef);
+      });
     } catch (e) {
       console.warn('[RT] フレンドリクエストの承認に失敗しました', e);
     }
@@ -2525,7 +2578,12 @@
   async function declineFriendRequest(fromUid) {
     if (!currentUid || !fromUid) return;
     try {
-      await deleteDoc(doc(db, 'users', currentUid, 'friendRequests', fromUid));
+      const requestRef = doc(db, 'users', currentUid, 'friendRequests', fromUid);
+      const senderSentRef = doc(db, 'users', fromUid, 'sentFriendRequests', currentUid);
+      await runTransaction(db, async function (tx) {
+        tx.delete(requestRef);
+        tx.delete(senderSentRef);
+      });
     } catch (e) {
       console.warn('[RT] フレンドリクエストの削除に失敗しました', e);
     }
@@ -2598,6 +2656,65 @@
     }
   }
 
+  // 自分が送信して、まだ相手に承認/拒否されていないリクエストの一覧（キャンセル用）
+  async function refreshSentFriendRequestsUi() {
+    const block = document.getElementById('friend-sent-requests-block');
+    const listEl = document.getElementById('friend-sent-requests-list');
+    if (!block || !listEl || !currentUid) return;
+    try {
+      const snaps = await getDocs(collection(db, 'users', currentUid, 'sentFriendRequests'));
+      listEl.textContent = '';
+      if (snaps.empty) {
+        block.style.display = 'none';
+        return;
+      }
+      block.style.display = 'block';
+
+      const toUids = [];
+      snaps.forEach(function (d) { toUids.push(d.id); });
+
+      const nameByUid = {};
+      await Promise.all(toUids.map(async function (toUid) {
+        try {
+          const uSnap = await getDoc(doc(db, 'users', toUid));
+          nameByUid[toUid] = (uSnap.exists() && typeof uSnap.data().nickname === 'string' && uSnap.data().nickname)
+            ? uSnap.data().nickname
+            : '名無し';
+        } catch (e) {
+          nameByUid[toUid] = '名無し';
+        }
+      }));
+
+      toUids.forEach(function (toUid) {
+        const row = document.createElement('div');
+        row.className = 'friend-request-row';
+        row.dataset.toUid = toUid;
+
+        const avatar = document.createElement('span');
+        avatar.className = 'friend-avatar';
+        avatar.textContent = '👤';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'friend-name';
+        // ユーザー入力（相手のニックネーム）は必ず textContent で表示する
+        nameEl.textContent = nameByUid[toUid] || '名無し';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'friend-req-btn friend-req-decline';
+        cancelBtn.dataset.action = 'cancel';
+        cancelBtn.textContent = 'キャンセル';
+
+        row.appendChild(avatar);
+        row.appendChild(nameEl);
+        row.appendChild(cancelBtn);
+        listEl.appendChild(row);
+      });
+    } catch (e) {
+      console.warn('[RT] 送信中リクエストの取得に失敗しました', e);
+    }
+  }
+
   async function loadFriendsData() {
     if (!currentUid) return [];
     try {
@@ -2605,24 +2722,25 @@
       const friendUids = [];
       snaps.forEach(function (d) { friendUids.push(d.id); });
 
-      const friends = [];
-      for (let i = 0; i < friendUids.length; i++) {
-        const fUid = friendUids[i];
+      // N+1回の直列取得を避け、全員分を並列に取得する
+      const results = await Promise.all(friendUids.map(async function (fUid) {
         try {
           const uSnap = await getDoc(doc(db, 'users', fUid));
-          if (uSnap.exists()) {
-            const data = uSnap.data();
-            friends.push({
-              uid: fUid,
-              nickname: (typeof data.nickname === 'string' && data.nickname) ? data.nickname : '名無し',
-              bestScore: typeof data.bestScore === 'number' ? data.bestScore : null,
-              attemptCount: typeof data.attemptCount === 'number' ? data.attemptCount : 0,
-              totalTimeSum: typeof data.totalTimeSum === 'number' ? data.totalTimeSum : 0
-            });
-          }
-        } catch (e) {}
-      }
-      return friends;
+          if (!uSnap.exists()) return null;
+          const data = uSnap.data();
+          return {
+            uid: fUid,
+            nickname: (typeof data.nickname === 'string' && data.nickname) ? data.nickname : '名無し',
+            bestScore: typeof data.bestScore === 'number' ? data.bestScore : null,
+            attemptCount: typeof data.attemptCount === 'number' ? data.attemptCount : 0,
+            totalTimeSum: typeof data.totalTimeSum === 'number' ? data.totalTimeSum : 0
+          };
+        } catch (e) {
+          return null;
+        }
+      }));
+
+      return results.filter(function (f) { return f !== null; });
     } catch (e) {
       console.warn('[RT] フレンド一覧の取得に失敗しました', e);
       return [];
@@ -2768,6 +2886,7 @@
 
     await refreshMyFriendCodeUi();
     await refreshFriendRequestsUi();
+    await refreshSentFriendRequestsUi();
     await refreshFriendListAndRanking();
   }
 
@@ -2815,6 +2934,13 @@
         statusEl.textContent = 'フレンドリクエストを送信しました';
         statusEl.classList.add('is-success');
         input.value = '';
+        refreshSentFriendRequestsUi();
+      } else if (result.reason === 'already-pending') {
+        statusEl.textContent = 'このユーザーには既にリクエストを送信済みです';
+        statusEl.classList.add('is-error');
+      } else if (result.reason === 'already-friend') {
+        statusEl.textContent = 'すでにフレンドです';
+        statusEl.classList.add('is-error');
       } else {
         statusEl.textContent = 'リクエストの送信に失敗しました';
         statusEl.classList.add('is-error');
@@ -2878,6 +3004,21 @@
         }
         refreshFriendRequestsUi();
         refreshFriendListAndRanking();
+      });
+    }
+
+    const sentRequestsList = document.getElementById('friend-sent-requests-list');
+    if (sentRequestsList && !sentRequestsList.dataset.bound) {
+      sentRequestsList.dataset.bound = '1';
+      sentRequestsList.addEventListener('click', async function (e) {
+        const btn = e.target.closest('.friend-req-btn');
+        if (!btn || btn.dataset.action !== 'cancel') return;
+        const row = e.target.closest('.friend-request-row');
+        const toUid = row ? row.getAttribute('data-to-uid') : null;
+        if (!toUid) return;
+        btn.disabled = true;
+        await cancelFriendRequest(toUid);
+        refreshSentFriendRequestsUi();
       });
     }
 
