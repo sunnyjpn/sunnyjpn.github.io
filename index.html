@@ -1089,12 +1089,7 @@
   }
   /* ▲▲ 追加演出ここまで ▲▲ */
 
-  /* ▼▼ ログイン誘導オーバーレイ／アカウントフッター ▼▼ */
-  #account-footer {
-    padding: 32px 20px 48px;
-    text-align: center;
-  }
-
+  /* ▼▼ ログイン誘導オーバーレイ ▼▼ */
   #site-footer {
     padding: 0 20px 40px;
     text-align: center;
@@ -1106,30 +1101,6 @@
     font-size: 11.5px;
     line-height: 1.8;
     color: rgba(255,255,255,0.35);
-  }
-
-  #account-footer-inner {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.45);
-  }
-
-  #logout-btn {
-    background: none;
-    border: 1px solid rgba(255,255,255,0.2);
-    color: rgba(255,255,255,0.6);
-    border-radius: 8px;
-    padding: 6px 14px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
-  }
-
-  #logout-btn:hover {
-    background: rgba(255,255,255,0.08);
-    color: #fff;
   }
 
   #login-splash {
@@ -1457,13 +1428,6 @@
       </div>
     </div>
   </section>
-
-  <footer id="account-footer">
-    <div id="account-footer-inner">
-      <span id="account-footer-user"></span>
-      <button id="logout-btn" type="button" style="display:none;">ログアウト</button>
-    </div>
-  </footer>
 
   <footer id="site-footer">
     <p id="site-footer-copyright">© 2026 Sunny Pulse. All Rights Reserved.</p>
@@ -1925,6 +1889,18 @@
 
   function stopFrameWatch() {
     frameWatchActive = false;
+  }
+
+  // ms表示用ヘルパー（このスクリプトブロックのスコープ用。
+  // Firebaseモジュール側にも同名の関数があるが、<script type="module">は
+  // 別スコープのため、ここで参照することはできない。そのため同じ実装を
+  // ここにも用意している）
+  function formatMs(ms) {
+    return typeof ms === 'number' ? ms.toFixed(2) + 'ms' : '–';
+  }
+
+  function msLabel(ms) {
+    return typeof ms === 'number' ? ms.toFixed(2) + ' ms' : '–';
   }
 
   function vibrateFeedback(pattern) {
@@ -2591,8 +2567,6 @@
   function updateAccountUi(user) {
     const loginBtn = document.getElementById('google-login-btn');
     const splash = document.getElementById('login-splash');
-    const footerUser = document.getElementById('account-footer-inner') ? document.getElementById('account-footer-user') : null;
-    const logoutBtn = document.getElementById('logout-btn');
 
     const toggleLabel = document.getElementById('account-toggle-label');
     const statusText = document.getElementById('account-status-text');
@@ -2602,8 +2576,6 @@
     if (user) {
       if (loginBtn) { loginBtn.textContent = 'ログイン済み'; loginBtn.disabled = true; }
       if (splash) splash.classList.remove('show');
-      if (footerUser) footerUser.textContent = (user.displayName || user.email || 'ログイン中') + ' としてログイン中';
-      if (logoutBtn) logoutBtn.style.display = 'inline-block';
 
       const label = (user.displayName || user.email || 'U').trim().charAt(0).toUpperCase();
       if (toggleLabel) toggleLabel.textContent = label || 'U';
@@ -2612,8 +2584,6 @@
       if (accLogoutBtn) accLogoutBtn.style.display = 'block';
     } else {
       if (loginBtn) { loginBtn.textContent = 'Googleでログイン'; loginBtn.disabled = false; }
-      if (footerUser) footerUser.textContent = '';
-      if (logoutBtn) logoutBtn.style.display = 'none';
       if (splash) {
         // 未ログイン時は常にログインを促すオーバーレイを表示する
         requestAnimationFrame(function () { splash.classList.add('show'); });
@@ -3325,19 +3295,6 @@
       splashGoogleBtn.dataset.bound = '1';
       splashGoogleBtn.addEventListener('click', function () {
         window.RT.signInWithGoogle();
-      });
-    }
-
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn && !logoutBtn.dataset.bound) {
-      logoutBtn.dataset.bound = '1';
-      logoutBtn.addEventListener('click', async function () {
-        try {
-          window.localStorage.removeItem('sunnySignedIn');
-          await signOut(auth);
-        } catch (e) {
-          console.warn('[RT] ログアウトに失敗しました', e);
-        }
       });
     }
 
