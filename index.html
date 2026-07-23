@@ -1616,6 +1616,13 @@
   // rAF同期により実際の描画完了後にstartTimeがセットされるまでの間、
   // 「readyになったが計測はまだ確定していない」状態を区別するためのフラグ
   let readyArmed = false;
+
+  // ===== 環境キャリブレーション / フレーム監視まわりの状態 =====
+  let envCalibration = null;       // { refreshRate, frameTime, measuredAt, sampleCount, estimated }
+  let frameWatchActive = false;
+  let frameWatchLast = 0;
+  let frameWatchMaxDelta = 0;
+  let frameWatchDropped = false;   // 今回の計測窓内でフレームドロップ（描画遅延）を検知したか
   let waitTimer = null;
   let retrievingTimer = null;
   let lastResult = null;
@@ -1795,6 +1802,131 @@
     renderStats();
   };
 
+  // ===========================================================
+  // 環境キャリブレーション（リフレッシュレート／フレーム間隔の実測）
+  //
+  // 目的：反応時間そのものへの人工的な「補正」を加えるためではなく、
+  //   (a) 端末のリフレッシュレートに応じたフレームドロップ判定の
+  //       しきい値を、固定値ではなく実測ベースで設定するため
+  //   (b) 診断用の参考値として保持しておくため
+  //   に使う。実測ms自体は一切書き換えない（＝表示・記録される
+  //   反応時間の信頼性を保つ）。
+  // ===========================================================
+  const CALIBRATION_STORAGE_KEY = 'rt_env_calibration_v1';
+  const CALIBRATION_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000; // 3日でキャッシュ失効
+  const CALIBRATION_WINDOW_MS = 700;                      // 起動時の測定時間
+  const CALIBRATION_MAX_FRAMES = 90;
+
+  function loadCachedCalibration() {
+    try {
+      const raw = window.localStorage.getItem(CALIBRATION_STORAGE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || typeof data.frameTime !== 'number' || typeof data.measuredAt !== 'number') return null;
+      if (Date.now() - data.measuredAt > CALIBRATION_MAX_AGE_MS) return null;
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveCalibration(data) {
+    try {
+      window.localStorage.setItem(CALIBRATION_STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  function medianOf(values) {
+    const sorted = values.slice().sort(function (a, b) { return a - b; });
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+
+  function runEnvironmentCalibration() {
+    const cached = loadCachedCalibration();
+    if (cached) {
+      envCalibration = cached;
+      return;
+    }
+    const deltas = [];
+    let last = null;
+    let frames = 0;
+    const calibStart = performance.now();
+
+    function step(ts) {
+      if (last !== null) {
+        const d = ts - last;
+        // タブ切替復帰直後などの極端な値は中央値算出から除外
+        if (d > 0 && d < 200) deltas.push(d);
+      }
+      last = ts;
+      frames++;
+      if (frames < CALIBRATION_MAX_FRAMES && (performance.now() - calibStart) < CALIBRATION_WINDOW_MS) {
+        requestAnimationFrame(step);
+      } else {
+        finish();
+      }
+    }
+
+    function finish() {
+      if (deltas.length < 5) {
+        // 測定に失敗した場合は60Hzを仮定した保守的な値を使う
+        envCalibration = { refreshRate: 60, frameTime: 16.67, measuredAt: Date.now(), sampleCount: 0, estimated: true };
+        return;
+      }
+      const frameTime = Math.round(medianOf(deltas) * 100) / 100;
+      const refreshRate = Math.round((1000 / frameTime) * 100) / 100;
+      envCalibration = {
+        refreshRate: refreshRate,
+        frameTime: frameTime,
+        measuredAt: Date.now(),
+        sampleCount: deltas.length,
+        estimated: false
+      };
+      saveCalibration(envCalibration);
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  // ページ内で1回だけ実行（結果には影響せず、非同期でバックグラウンド測定）
+  runEnvironmentCalibration();
+
+  // ===========================================================
+  // フレームドロップ検知
+  // 「ready」区間（緑色が表示されてからタップされるまで）の間、
+  // 毎フレームの描画間隔を監視する。キャリブレーションで得た
+  // フレーム時間の3倍を超えるコマ落ちが起きた場合、その回の
+  // 計測はクライアント環境側の遅延の影響を強く受けている可能性が
+  // 高いと判断し、クラウドへのスコア送信（ランキング反映）だけを
+  // 見送る（ローカル表示・自己ベストの更新は妨げない）。
+  // ===========================================================
+  function frameWatchThresholdMs() {
+    const base = envCalibration ? envCalibration.frameTime : 16.67;
+    return Math.max(base * 3, 40);
+  }
+
+  function frameWatchTick(ts) {
+    if (!frameWatchActive) return;
+    const delta = ts - frameWatchLast;
+    frameWatchLast = ts;
+    if (delta > frameWatchMaxDelta) frameWatchMaxDelta = delta;
+    if (delta > frameWatchThresholdMs()) frameWatchDropped = true;
+    requestAnimationFrame(frameWatchTick);
+  }
+
+  function startFrameWatch() {
+    frameWatchActive = true;
+    frameWatchLast = performance.now();
+    frameWatchMaxDelta = 0;
+    frameWatchDropped = false;
+    requestAnimationFrame(frameWatchTick);
+  }
+
+  function stopFrameWatch() {
+    frameWatchActive = false;
+  }
+
   function vibrateFeedback(pattern) {
     if (navigator.vibrate) {
       try { navigator.vibrate(pattern); } catch (e) {}
@@ -1805,6 +1937,7 @@
     state = 'idle';
     clearTimeout(waitTimer);
     clearTimeout(retrievingTimer);
+    stopFrameWatch();
     activeRound = null;
     box.style.backgroundColor = COLOR_IDLE;
     idleTitle.style.display = 'block';
@@ -1856,6 +1989,7 @@
         startTime = performance.now();
         readyArmed = true;
         markRoundReady();
+        startFrameWatch();
       });
     });
   }
@@ -1864,6 +1998,7 @@
     state = 'toosoon';
     clearTimeout(waitTimer);
     clearTimeout(retrievingTimer);
+    stopFrameWatch();
     if (retrievingText) retrievingText.style.display = 'none';
     if (activeRound) activeRound.used = true;
     box.style.backgroundColor = COLOR_TOOSOON;
@@ -1920,7 +2055,10 @@
 
       // スコアの送信はサーバー発行のラウンドトークンとセットで行う。
       // トークンが無い（発行に失敗・未ログイン等）場合はローカル記録のみに留める。
-      if (verdict && verdict.round) {
+      // フレームドロップ（描画遅延）を検知した回は、実機の一時的な負荷で
+      // 数値が不当に伸びている可能性があるため、ランキングへの反映（クラウド送信）
+      // のみ見送る。ローカルの自己ベスト・統計はそのまま更新する。
+      if (verdict && verdict.round && !verdict.round.frameDropped) {
         (function (round) {
           Promise.resolve(round.roundIdPromise).then(function () {
             const roundId = round.roundId;
@@ -2049,6 +2187,8 @@
       // 人間の目と手では実質反応不可能な範囲なので黙って無視する。
       if (!readyArmed) return;
       const now = performance.now();
+      stopFrameWatch();
+      if (activeRound) activeRound.frameDropped = frameWatchDropped;
       // 小数点以下2桁まで保持（performance.nowはサブミリ秒精度を持つため）
       const ms = Math.round((now - startTime) * 100) / 100;
       const verdict = validateRoundResult(ms, now);
