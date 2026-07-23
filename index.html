@@ -678,23 +678,63 @@
   }
 
   #account-panel {
-    position: absolute;
-    top: calc(var(--share-top) + 46px);
-    right: 14px;
-    z-index: 6;
-    width: 290px;
-    max-width: calc(100vw - 28px);
-    max-height: min(76vh, 560px);
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
     overflow-y: auto;
     background: #17171b;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 16px;
-    padding: 18px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    border: none;
+    border-radius: 0;
+    padding: 28px 20px 40px;
+    box-shadow: none;
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(12px);
     pointer-events: none;
     transition: opacity 0.2s ease, transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #account-panel > * {
+    width: 100%;
+    max-width: 360px;
+  }
+
+  #account-panel-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  #account-panel-close-btn:hover {
+    background: rgba(255,255,255,0.16);
+  }
+
+  #account-panel-title {
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin: 4px 0 22px;
   }
 
   #account-panel.open {
@@ -1061,6 +1101,8 @@
     </button>
 
     <div id="account-panel">
+      <button id="account-panel-close-btn" type="button" aria-label="閉じる">&times;</button>
+      <div id="account-panel-title">アカウント</div>
       <div id="account-avatar-wrap">
         <img id="account-avatar-img" alt="" style="display:none;">
         <span id="account-avatar-fallback">?</span>
@@ -2312,7 +2354,20 @@
       const ref = doc(db, 'users', uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {
-        const remote = normalizeStats(snap.data());
+        const raw = snap.data();
+        // 修正: Firestoreのドキュメントに attemptCount が存在しない場合
+        // （ニックネームのみ設定済み等、クラウド確定スコアがまだ無いユーザー）、
+        // normalizeStats() は attemptCount:0 / totalTimeSum:0 という「空の初期値」を
+        // 補完してしまい、それが isPlausibleStats() を通過してローカルの正しい
+        // 記録（平均・回数）を丸ごと上書きしてしまっていた。
+        // サイト更新時のリロードで onAuthStateChanged が再度発火し、この
+        // pullAndMerge が呼ばれるたびに記録が消えて見えるバグの原因だったため、
+        // クラウド側に実際のプレイ記録（attemptCountが数値として存在する）が
+        // ある場合のみマージするようにする。
+        if (typeof raw.attemptCount !== 'number') {
+          return;
+        }
+        const remote = normalizeStats(raw);
         if (isPlausibleStats(remote) && window.RT && window.RT.applyRemoteStats) {
           window.RT.applyRemoteStats(remote);
         }
@@ -2494,6 +2549,7 @@
 
     const toggleBtn = document.getElementById('account-toggle-btn');
     const panel = document.getElementById('account-panel');
+    const panelCloseBtn = document.getElementById('account-panel-close-btn');
     if (toggleBtn && panel && !toggleBtn.dataset.bound) {
       toggleBtn.dataset.bound = '1';
       toggleBtn.addEventListener('click', function (event) {
@@ -2501,6 +2557,12 @@
         panel.classList.toggle('open');
       });
       panel.addEventListener('click', function (event) { event.stopPropagation(); });
+      if (panelCloseBtn) {
+        panelCloseBtn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          panel.classList.remove('open');
+        });
+      }
       document.addEventListener('click', function () {
         panel.classList.remove('open');
       });
