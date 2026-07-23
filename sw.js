@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reaction-time-test-cache-v6';
+const CACHE_NAME = 'reaction-time-test-cache-v7';
 const APP_SHELL = [
   './',
   './index.html',
@@ -8,8 +8,7 @@ const APP_SHELL = [
   './icon-512-maskable.png',
   './apple-touch-icon.png',
   './og-image.png',
-  './go-sound.mp3',
-  './result-sound.mp3'
+  './go-sound.mp3'
 ];
 
 self.addEventListener('install', function (event) {

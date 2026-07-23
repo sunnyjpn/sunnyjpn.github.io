@@ -1490,10 +1490,7 @@
   const goSound = new Audio('go-sound.mp3');
   goSound.preload = 'auto';
   goSound.volume = 1.0; // この効果音のみ最大音量で再生する（音源自体も音量を上げ済み）
-  const resultSound = new Audio('result-sound.mp3');
-  resultSound.preload = 'auto';
-  resultSound.volume = 0.85;
-  const gameSounds = [goSound, resultSound];
+  const gameSounds = [goSound];
 
   function stopAllGameSounds() {
     gameSounds.forEach(function (audio) {
@@ -2098,10 +2095,6 @@
     }
 
     vibrateFeedback(accepted && isNewBest ? [30, 40, 30] : 25);
-
-    if (accepted) {
-      playGameSound(resultSound);
-    }
 
     box.style.backgroundColor = COLOR_RESULT;
     idleTitle.style.display = 'none';
