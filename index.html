@@ -670,6 +670,15 @@
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     transition: transform 0.15s ease, background-color 0.15s ease;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  #account-toggle-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
   }
 
   #account-toggle-btn:hover {
@@ -909,39 +918,6 @@
     to { transform: scale(2.6); opacity: 0; }
   }
 
-  #best-record-flash {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 3;
-    opacity: 0;
-  }
-
-  #best-record-flash.show {
-    animation: record-flash 0.8s ease-out forwards;
-  }
-
-  .record-flash-text {
-    font-size: clamp(20px, 5vw, 28px);
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: 0.04em;
-    text-shadow: 0 0 20px rgba(255,255,255,0.8);
-    background: radial-gradient(circle, rgba(255,215,0,0.35), transparent 70%);
-    padding: 18px 36px;
-    border-radius: 20px;
-  }
-
-  @keyframes record-flash {
-    0%   { opacity: 0; transform: scale(0.7); }
-    30%  { opacity: 1; transform: scale(1.08); }
-    70%  { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; transform: scale(1); }
-  }
-
   #main-text.pulse-ms {
     animation: ms-pulse 0.3s ease-out;
   }
@@ -954,7 +930,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     #box::before, #box::after { animation: none; opacity: 0; }
-    #best-record-flash.show { animation: none; opacity: 0; }
     #main-text.pulse-ms { animation: none; }
   }
   /* ▲▲ 追加演出ここまで ▲▲ */
@@ -1097,6 +1072,7 @@
     </div>
 
     <button id="account-toggle-btn" type="button" aria-label="アカウント">
+      <img id="account-toggle-img" alt="" style="display:none;">
       <span id="account-toggle-label">?</span>
     </button>
 
@@ -1157,9 +1133,6 @@
       <button id="ios-install-hint-close" type="button" aria-label="閉じる">×</button>
     </div>
 
-    <div id="best-record-flash" aria-hidden="true">
-      <span class="record-flash-text">★ NEW RECORD! ★</span>
-    </div>
   </div>
 
   <section id="seo-content" aria-labelledby="seo-heading">
@@ -1310,13 +1283,16 @@
   const installBtn = document.getElementById('install-btn');
   const iosHint = document.getElementById('ios-install-hint');
   const iosHintClose = document.getElementById('ios-install-hint-close');
-  const bestRecordFlash = document.getElementById('best-record-flash');
+  // ハイスコア更新時の演出（テキスト・クラッカー）は要望により完全に廃止
 
   const RECENT_HISTORY_MAX = 5;
   const MIN_REACTION_MS = 15;
   const MAX_REACTION_MS = 3000;
   const ROUND_EARLY_TOLERANCE_MS = 24;
   const SUSPICIOUS_LIMIT = 3;
+  // 反応時間が750ms以上（＝実質的に反応できていない・待機画面のまま止まっていたに近い遅さ）
+  // の場合は、通常の結果表示ではなく「Too soon!」と同じ却下システムを適用する。
+  const SLOW_REACTION_THRESHOLD_MS = 750;
 
   let integrityState = {
     cloudSyncLocked: false,
@@ -1770,7 +1746,7 @@
     mainText.textContent = 'Wait for green';
     subText.style.display = 'none';
 
-    const delay = 1000 + Math.random() * 1500;
+    const delay = 500 + Math.random() * 1000;
     beginIntegrityRound(delay);
     waitTimer = setTimeout(setReadyScreen, delay);
   }
@@ -1896,12 +1872,6 @@
     mainText.classList.remove('pulse-ms');
     void mainText.offsetWidth;
     mainText.classList.add('pulse-ms');
-
-    if (accepted && isNewBest && bestRecordFlash) {
-      bestRecordFlash.classList.remove('show');
-      void bestRecordFlash.offsetWidth;
-      bestRecordFlash.classList.add('show');
-    }
   }
 
   function shareText() {
@@ -1997,6 +1967,13 @@
       if (activeRound) activeRound.frameDropped = frameWatchDropped;
       // 小数点以下2桁まで保持（performance.nowはサブミリ秒精度を持つため）
       const ms = Math.round((now - startTime) * 100) / 100;
+      // 反応時間が750ms以上の場合は、通常の結果表示（例：「891.1ms」＋不審判定の注釈）ではなく、
+      // フライング（早すぎ）と同じ「Too soon!」の却下画面にまとめる。
+      if (ms >= SLOW_REACTION_THRESHOLD_MS) {
+        if (activeRound) activeRound.used = true;
+        setTooSoonScreen();
+        return;
+      }
       const verdict = validateRoundResult(ms, now);
       setRetrievingScreen(ms, verdict);
     }
@@ -2345,9 +2322,14 @@
     }
   }
 
-  // ログイン時：クラウド側に既に記録があればローカル表示へ取り込む（読み取りのみ）。
-  // ログイン前にローカルだけでプレイした記録は、サーバー検証を経ていないため
-  // クラウドへは反映されない（ログイン後の新しいプレイ分から同期される）。
+  // ログイン時：クラウド側とローカル側の記録を比較し、
+  // 「結果の良い方（ベストスコア＝反応時間が短い方）」を優先して同期する。
+  // 例：スマホでプレイしてクラウドに記録があり、その後PCで初めてログインした場合、
+  // 　　PC側のローカル記録が無くてもクラウドの記録が表示される。
+  // 　　逆に、同じアカウントで新しい端末の方が良い記録を出していた場合は、
+  // 　　（架空のスコアをクライアントから直接書き込むことはできない設計のため）
+  // 　　ひとまずローカル表示はそのまま維持し、次回そのアカウントでプレイした
+  // 　　時点でクラウド側のベストスコアも自然と更新される。
   async function pullAndMerge(uid) {
     isSyncing = true;
     try {
@@ -2368,9 +2350,24 @@
           return;
         }
         const remote = normalizeStats(raw);
-        if (isPlausibleStats(remote) && window.RT && window.RT.applyRemoteStats) {
+        if (!isPlausibleStats(remote)) return;
+
+        const local = (window.RT && window.RT.getStats) ? window.RT.getStats() : null;
+        const localBest = local ? local.bestScore : null;
+
+        // 「良い方」＝反応時間(ms)が小さい方を採用。
+        // ローカルに記録が無い、またはクラウドの方が良い記録の場合のみ、
+        // クラウド側の記録一式（best/average/回数）で表示を更新する。
+        const remoteIsBetterOrEqual =
+          remote.bestScore !== null &&
+          (localBest === null || remote.bestScore <= localBest);
+
+        if (remoteIsBetterOrEqual && window.RT && window.RT.applyRemoteStats) {
           window.RT.applyRemoteStats(remote);
         }
+        // ローカルの方が良い記録の場合は、クラウド側は変更せずローカル表示を維持する
+        // （クライアントから任意のベストスコアをFirestoreへ直接書き込むことは
+        // 　不正防止のため許可されていないため）。
       }
     } catch (e) {
       console.warn('[RT] Firestore読み込みに失敗しました', e);
@@ -2403,6 +2400,7 @@
     const loginBtn = document.getElementById('google-login-btn');
     const splash = document.getElementById('login-splash');
 
+    const toggleImg = document.getElementById('account-toggle-img');
     const toggleLabel = document.getElementById('account-toggle-label');
     const statusText = document.getElementById('account-status-text');
     const accGoogleBtn = document.getElementById('account-google-btn');
@@ -2413,10 +2411,23 @@
       if (splash) splash.classList.remove('show');
 
       const label = (user.displayName || user.email || 'U').trim().charAt(0).toUpperCase();
-      if (toggleLabel) toggleLabel.textContent = label || 'U';
       if (statusText) statusText.textContent = 'Googleでログイン中：' + (user.displayName || user.email || '');
       if (accGoogleBtn) accGoogleBtn.style.display = 'none';
       if (accLogoutBtn) accLogoutBtn.style.display = 'block';
+
+      // 右上のトグルアイコンをGoogleアカウントのプロフィール画像に変更する
+      if (user.photoURL && toggleImg) {
+        toggleImg.src = user.photoURL;
+        toggleImg.style.display = 'block';
+        if (toggleLabel) toggleLabel.style.display = 'none';
+        toggleImg.onerror = function () {
+          toggleImg.style.display = 'none';
+          if (toggleLabel) { toggleLabel.style.display = 'block'; toggleLabel.textContent = label || 'U'; }
+        };
+      } else {
+        if (toggleImg) toggleImg.style.display = 'none';
+        if (toggleLabel) { toggleLabel.style.display = 'block'; toggleLabel.textContent = label || 'U'; }
+      }
 
       const avatarImg = document.getElementById('account-avatar-img');
       const avatarFallback = document.getElementById('account-avatar-fallback');
@@ -2439,7 +2450,8 @@
         requestAnimationFrame(function () { splash.classList.add('show'); });
       }
 
-      if (toggleLabel) toggleLabel.textContent = '?';
+      if (toggleImg) toggleImg.style.display = 'none';
+      if (toggleLabel) { toggleLabel.style.display = 'block'; toggleLabel.textContent = '?'; }
       if (statusText) statusText.textContent = '未ログインです';
       if (accGoogleBtn) accGoogleBtn.style.display = 'block';
       if (accLogoutBtn) accLogoutBtn.style.display = 'none';
