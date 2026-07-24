@@ -928,9 +928,26 @@
     100% { transform: scale(1); }
   }
 
+  /* 裏仕様: 198.9ms の結果のみ、テキストをタップすると出現する隠しランク表示 */
+  #main-text.ss-rank-text {
+    background: linear-gradient(90deg, #FFD700, #FFF3B0, #FFD700);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
+    animation: ss-rank-shine 1.6s linear infinite;
+    cursor: pointer;
+  }
+
+  @keyframes ss-rank-shine {
+    to { background-position: -200% center; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     #box::before, #box::after { animation: none; opacity: 0; }
     #main-text.pulse-ms { animation: none; }
+    #main-text.ss-rank-text { animation: none; }
   }
   /* ▲▲ 追加演出ここまで ▲▲ */
 
@@ -1286,7 +1303,7 @@
   // ハイスコア更新時の演出（テキスト・クラッカー）は要望により完全に廃止
 
   const RECENT_HISTORY_MAX = 5;
-  const MIN_REACTION_MS = 15;
+  const MIN_REACTION_MS = 0;
   const MAX_REACTION_MS = 3000;
   const ROUND_EARLY_TOLERANCE_MS = 24;
   const SUSPICIOUS_LIMIT = 3;
@@ -1819,6 +1836,9 @@
   function setResultScreen(ms, verdict) {
     state = 'result';
     lastResult = ms;
+    // 新しい結果が出るたびに裏仕様の表示はリセットする
+    ssEasterEggActive = false;
+    mainText.classList.remove('ss-rank-text');
 
     const accepted = !verdict || verdict.ok !== false;
     let isNewBest = false;
@@ -1873,6 +1893,24 @@
     void mainText.offsetWidth;
     mainText.classList.add('pulse-ms');
   }
+
+  // 裏仕様: 結果が「198.9ms」ちょうどの時だけ、数値をタップすると
+  // 隠しランク「SS級」表示に切り替わる。もう一度タップすると元のms表示に戻る。
+  let ssEasterEggActive = false;
+  const SS_EASTER_EGG_MS = 198.9;
+  mainText.addEventListener('pointerdown', function (event) {
+    if (state !== 'result' || lastResult !== SS_EASTER_EGG_MS) return;
+    event.preventDefault();
+    event.stopPropagation();
+    ssEasterEggActive = !ssEasterEggActive;
+    if (ssEasterEggActive) {
+      mainText.textContent = 'SS級';
+      mainText.classList.add('ss-rank-text');
+    } else {
+      mainText.textContent = msLabel(lastResult);
+      mainText.classList.remove('ss-rank-text');
+    }
+  }, { passive: false });
 
   function shareText() {
     if (lastResult !== null) {
@@ -2263,7 +2301,7 @@
 
   function isPlausibleStats(s) {
     if (!s) return false;
-    if (s.bestScore !== null && (typeof s.bestScore !== 'number' || s.bestScore < 50 || s.bestScore > 1000)) return false;
+    if (s.bestScore !== null && (typeof s.bestScore !== 'number' || s.bestScore < 0 || s.bestScore > 1000)) return false;
     if (typeof s.attemptCount !== 'number' || s.attemptCount < 0 || s.attemptCount > 1000000) return false;
     if (typeof s.totalTimeSum !== 'number' || s.totalTimeSum < 0) return false;
     return true;
